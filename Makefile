@@ -15,3 +15,6 @@ genxml: $(PYTHON)
 		 [ -d "../$$year" ] && \
 	 	$(PYTHON) parseDsa2Oval.py -d ../$$year >oval-definitions-$$year.xml;  \
 	 done
+
+clean::
+	  -rm -f oval-definitions*.xml
