@@ -6,6 +6,7 @@ WMLBASE=../..
 CUR_DIR=security/oval
 SUBS=
 
+# We need this python version, 2.3 will not do
 PYTHON=/usr/bin/python2.4
 
 include $(WMLBASE)/Make.lang
@@ -16,5 +17,7 @@ genxml: $(PYTHON)
 	 	$(PYTHON) parseDsa2Oval.py -d ../$$year >oval-definitions-$$year.xml;  \
 	 done
 
+# TODO 'clean' could also remove the python-compiled files generated
+# by Python when running the script
 clean::
 	  -rm -f oval-definitions*.xml
