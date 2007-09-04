@@ -13,7 +13,7 @@ include $(WMLBASE)/Make.lang
 
 # NOTE: CUR_YEAR is defined in $(WMLBASE)/Makefile.common
 #CUR_YEAR=$(shell date +%Y)
-XMLFILES=$(shell for year in `seq 2000 $(CUR_YEAR)`; do echo oval-definition-$$year.xml; done)
+XMLFILES=$(shell for year in `seq 2000 $(CUR_YEAR)`; do echo oval-definitions-$$year.xml; done)
 
 XMLDESTFILES=$(patsubst %,$(HTMLDIR)/%,$(XMLFILES))
 
@@ -21,10 +21,10 @@ all:: $(XMLFILES)
 
 install:: $(XMLDESTFILES)
 
-oval-definition-%.xml: $(PYTHON) parseDsa2Oval.py \
+oval-definitions-%.xml: $(PYTHON) parseDsa2Oval.py \
 	$(wildcard $(ENGLISHDIR)/security/%/dsa-*.wml)  \
 	$(wildcard $(ENGLISHDIR)/security/%/dsa-*.data) 
-	$(PYTHON) parseDsa2Oval.py -d ../$(patsubst oval-definition-%.xml,%,$@) >$@
+	$(PYTHON) parseDsa2Oval.py -d ../$(patsubst oval-definitions-%.xml,%,$@) >$@
 
 $(XMLDESTFILES): $(HTMLDIR)/%: %
 	@test -d $(HTMLDIR) || mkdir -m g+w -p $(HTMLDIR)
