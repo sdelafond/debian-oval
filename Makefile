@@ -21,9 +21,12 @@ all:: $(XMLFILES)
 install:: $(XMLDESTFILES)
 
 oval-definitions-%.xml: $(PYTHON) parseDsa2Oval.py \
+	$(wildcard oval/*/*.py) \
 	$(wildcard $(ENGLISHDIR)/security/%/dsa-*.wml)  \
 	$(wildcard $(ENGLISHDIR)/security/%/dsa-*.data) 
 	$(PYTHON) parseDsa2Oval.py -d ../$(patsubst oval-definitions-%.xml,%,$@) >$@
+
+
 
 $(XMLDESTFILES): $(HTMLDIR)/%: %
 	@test -d $(HTMLDIR) || mkdir -m g+w -p $(HTMLDIR)
