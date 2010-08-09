@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# Extracts the data DSA files and creates OVAL queries to                                                                                           
-# be used with the OVAL query interpreter (see http://oval.mitre.org)                                                                                                                  
-#                                                                                                                                              
+# Extracts the data DSA files and creates OVAL queries to
+# be used with the OVAL query interpreter (see http://oval.mitre.org)
+
 # (c) 2007 Pavel Vinogradov
 # (c) 2004 Javier Fernandez-Sanguino                                                                                                           
 # Licensed under the GNU General Public License version 2.                                                                                     
