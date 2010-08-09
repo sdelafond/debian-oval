@@ -10,9 +10,15 @@
 import re
 import logging
 import datetime
-import xml.dom.ext
+#import xml.dom.ext
 import xml.dom.minidom
 from oval.definition.differ import differ
+import re
+
+# from http://boodebr.org/main/python/all-about-python-and-unicode#UNI_XML
+RE_XML_ILLEGAL = u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])' + u'|' + u'([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % (unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff), unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff), unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff)) 
+regex = re.compile(RE_XML_ILLEGAL)
+
 					
 class OvalGeneratorException (Exception):
     pass
@@ -36,11 +42,17 @@ def __createXMLElement (name, descr = None, attrs = {}):
 	element = doc.createElement (name)
 	
 	for (attr, value) in attrs.items():
-		attribute = doc.createAttribute (attr)
-		attribute.value = value
+                for match in regex.finditer(attr):
+                    attr = attr[:match.start()] + "?" + attr[match.end():]
+                for match in regex.finditer(value):
+                    value = value[:match.start()] + "?" + value[match.end():]
+		attribute = doc.createAttribute (attr.encode("utf8"))
+		attribute.value = value.encode("utf8")
 		element.attributes.setNamedItem (attribute)
 	
 	if descr != None:
+                for match in regex.finditer(descr):
+                    descr = descr[:match.start()] + "?" + descr[match.end():]
 		description = doc.createTextNode (descr.encode("utf8"))
 		element.appendChild (description)
 	
@@ -55,7 +67,7 @@ testsCurId = 1
 objectsCurId = 1
 statesCurId = 1
 
-releaseArchHash = {"2.0" : 2, "2.1" : 4, "2.2":  6, "3.0" : 11, "3.1" : 12, "4.0" : 11}
+releaseArchHash = {"2.0" : 2, "2.1" : 4, "2.2":  6, "3.0" : 11, "3.1" : 12, "4.0" : 11, "5.0": 12}
 testsHash = {"arch" : {}, "release": {}, "obj": {}, "fileSte": {}, "unameSte" : {}, "dpkgSte": {}} 
 #We need more info about alpha, arm, hppa, bmips, lmips
 unameArchTable = {'i386' : 'i686', 'amd64' : 'x86-64', 'ia64' : 'ia64', 'powerpc' : 'ppc', 's390' : 's390x', 'm86k' : 'm86k'} 
@@ -514,4 +526,4 @@ def createOVALDefinitions (dsaref):
 
 def printOVALDefinitions (doc):
 	if doc.getElementsByTagName("definitions")[0].hasChildNodes():
-		xml.dom.ext.PrettyPrint(doc)
+                print doc.toprettyxml()
