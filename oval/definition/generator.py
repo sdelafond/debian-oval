@@ -67,7 +67,7 @@ testsCurId = 1
 objectsCurId = 1
 statesCurId = 1
 
-releaseArchHash = {"2.0" : 2, "2.1" : 4, "2.2":  6, "3.0" : 11, "3.1" : 12, "4.0" : 11, "5.0": 12}
+releaseArchHash = {"2.0" : 2, "2.1" : 4, "2.2":  6, "3.0" : 11, "3.1" : 12, "4.0" : 11, "5.0": 12, "6.0": 11}
 testsHash = {"arch" : {}, "release": {}, "obj": {}, "fileSte": {}, "unameSte" : {}, "dpkgSte": {}} 
 #We need more info about alpha, arm, hppa, bmips, lmips
 unameArchTable = {'i386' : 'i686', 'amd64' : 'x86-64', 'ia64' : 'ia64', 'powerpc' : 'ppc', 's390' : 's390x', 'm86k' : 'm86k'} 
