@@ -5,28 +5,29 @@ WMLBASE=../..
 CUR_DIR=security/oval
 SUBS=
 
-# We need this python version, 2.3 will not do
-PYTHON=/usr/bin/python2.4
+# We need python version 2.4 or later (2.3 will not do)
+# TODO: (20111012) The Python script does not work in Python 2.6, review
+PYTHON=/usr/bin/python2.5
 
 include $(WMLBASE)/Make.lang
 
 # NOTE: CUR_YEAR is defined in $(WMLBASE)/Makefile.common
-#CUR_YEAR=$(shell date +%Y)
 XMLFILES=$(shell for year in `seq 2000 $(CUR_YEAR)`; do echo oval-definitions-$$year.xml; done)
 
 XMLDESTFILES=$(patsubst %,$(HTMLDIR)/%,$(XMLFILES))
 
-all:: $(XMLFILES)
+all:: check_empty_files $(XMLFILES)
 
 install:: $(XMLDESTFILES)
 
-oval-definitions-%.xml: $(PYTHON) parseDsa2Oval.py \
+oval-definitions-%.xml: parseDsa2Oval.py \
 	$(wildcard oval/*/*.py) \
 	$(wildcard $(ENGLISHDIR)/security/%/dsa-*.wml)  \
 	$(wildcard $(ENGLISHDIR)/security/%/dsa-*.data) 
-	$(PYTHON) parseDsa2Oval.py -d ../$(patsubst oval-definitions-%.xml,%,$@) >$@
-
-
+	@[ -e $(PYTHON) ] || { echo "ERROR: Required python binary $(PYTHON) is not available, aborting generation" >&2; exit 1; }
+	-$(PYTHON) parseDsa2Oval.py -d ../$(patsubst oval-definitions-%.xml,%,$@) >$@
+# Remove empty files, to force regeneration in later runs
+	@[ -s $@ ] || { echo "WARNING: Removing empty definition $@" ; rm -f $@ ;}
 
 $(XMLDESTFILES): $(HTMLDIR)/%: %
 	@test -d $(HTMLDIR) || mkdir -m g+w -p $(HTMLDIR)
@@ -39,3 +40,11 @@ clean::
 	
 cleandest::
 	  -rm -f $(HTMLDIR)/oval-definitions-*.xml
+	
+# Remove empty files to force regeneration
+check_empty_files:
+	@for file in oval-definitions-*.xml; do \
+		[ -e "$$file" ] && [ ! -s "$$file" ] && rm -f $$file ; \
+	done
+
+.PHONY : check_empty_files
