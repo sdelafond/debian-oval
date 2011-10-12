@@ -35,6 +35,7 @@ def parseFile (path):
 
 	data = {}
 	deb_ver = None
+	fdeb_ver = None
 	
 	filename = os.path.basename (path)
 
@@ -83,8 +84,17 @@ def parseFile (path):
 		versionpatern = re.compile (r'<h3>Debian GNU/Linux (\d.\d) \((.*?)\)</h3>')
 		result = versionpatern.search (line)
 		if result:
-			deb_ver = result.groups()[0]
+			fdeb_ver = result.groups()[0]
+
+                # Alternative format for data files
+		versionpatern = re.compile (r'affected_release>([\d\.]+)<')
+		result = versionpatern.search (line)
+		if result:
+			fdeb_ver = result.groups()[0]
 			
+                if fdeb_ver:
+                        deb_ver = fdeb_ver 
+                        fdeb_ver = None
 			if data.has_key("release"):
 				if data["release"].has_key(deb_ver):
 					logging.log(logging.WARNING, "DSA %s: Found second files section for release %s" % (dsa, deb_ver))
@@ -92,6 +102,7 @@ def parseFile (path):
 					data["release"][deb_ver] = {}
 			else:
 				data["release"] = {deb_ver: {}}
+
 		# Binary packages are pushed into array
 		# Those are prepended by fileurls
 		# TODO: Packages do _NOT_ include epochs 
