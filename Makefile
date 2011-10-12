@@ -12,7 +12,7 @@ PYTHON=/usr/bin/python2.5
 include $(WMLBASE)/Make.lang
 
 # NOTE: CUR_YEAR is defined in $(WMLBASE)/Makefile.common
-XMLFILES=$(shell for year in `seq 2000 $(CUR_YEAR)`; do echo oval-definitions-$$year.xml; done)
+XMLFILES=$(shell for year in `seq 2001 $(CUR_YEAR)`; do echo oval-definitions-$$year.xml; done)
 
 XMLDESTFILES=$(patsubst %,$(HTMLDIR)/%,$(XMLFILES))
 
