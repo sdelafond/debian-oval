@@ -98,9 +98,9 @@ if __name__ == "__main__":
         sys.exit(0)
         
     if opts.has_key('-v'):
-        logging.basicConfig(level=logging.WARNING)
+        logging.basicConfig(level=logging.DEBUG)
         
-    logging.basicConfig(level=logging.ERROR)
+    logging.basicConfig(level=logging.WARNING)
         
     parsedirs (opts['-d'], '.data', 2)
     printdsas(dsaref)
