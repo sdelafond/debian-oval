@@ -26,8 +26,9 @@ oval-definitions-%.xml: parseDsa2Oval.py \
 	$(wildcard $(ENGLISHDIR)/security/%/dsa-*.data) 
 	@[ -e $(PYTHON) ] || { echo "ERROR: Required python binary $(PYTHON) is not available, aborting generation" >&2; exit 1; }
 	-$(PYTHON) parseDsa2Oval.py -d ../$(patsubst oval-definitions-%.xml,%,$@) >$@
-# Remove empty files, to force regeneration in later runs
-	@[ -s $@ ] || { echo "WARNING: Removing empty definition $@" ; rm -f $@ ;}
+# Warn if empty files are generated
+# Note: They cannot be removed or the install target will fail later
+	@[ -s $@ ] || echo "WARNING: OVAL Definition $@ is empty, please review script and/or DSAs" 
 
 $(XMLDESTFILES): $(HTMLDIR)/%: %
 	@test -d $(HTMLDIR) || mkdir -m g+w -p $(HTMLDIR)
