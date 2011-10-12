@@ -411,11 +411,11 @@ def createDefinition (dsa, dsaref):
 		dsaref -- DSA parsed data
 	"""	
 	if not dsaref.has_key("release"):
-		logging.log(logging.ERROR, "DSA %s: Release definition not well formatted. Ignore this DSA." % dsa)
+		logging.log(logging.WARNING, "DSA %s: Release definition not well formatted. Ignoring this DSA." % dsa)
 		raise DSAFormatException
 		
 	if not dsaref.has_key("packages"):
-		logging.log(logging.WARNING, "DSA %s: Package information missed. Ignore this DSA." % dsa)
+		logging.log(logging.WARNING, "DSA %s: Package information missed. Ignoring this DSA." % dsa)
 		dsaref["packages"] = ""
 
 	if not dsaref.has_key("description"):
@@ -514,7 +514,7 @@ def createOVALDefinitions (dsaref):
 		try:
 			definitions.appendChild (createDefinition(dsa, dsaref[dsa]))
 		except DSAFormatException:
-			logging.log (logging.ERROR, "DSA %s: Bad data file. Ignore this DSA." % dsa)
+			logging.log (logging.WARNING, "DSA %s: Bad data file. Ignoring this DSA." % dsa)
 			
 	root.appendChild (definitions)
 	
