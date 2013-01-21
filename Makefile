@@ -5,9 +5,7 @@ WMLBASE=../..
 CUR_DIR=security/oval
 SUBS=
 
-# We need python version 2.4 or later (2.3 will not do)
-# TODO: (20111012) The Python script does not work in Python 2.6, review
-PYTHON=/usr/bin/python2.5
+PYTHON=/usr/bin/python
 
 include $(WMLBASE)/Make.lang
 
