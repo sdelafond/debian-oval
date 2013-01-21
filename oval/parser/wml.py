@@ -79,7 +79,7 @@ def __parseMoreinfo (info):
 	""" Remove unnecessary information form moreinfo tag"""
 
 	p = re.compile ("<p>(.*?)</p>", re.DOTALL)
-	paragraphs = [m.groups()[0]  for m in re.finditer(p, info, re.DOTALL)]
+	paragraphs = [m.groups()[0]  for m in re.finditer(p, info)]
 	result = ""
 
 	for par in paragraphs:
