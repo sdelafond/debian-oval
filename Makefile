@@ -43,7 +43,9 @@ cleandest::
 # Remove empty files to force regeneration
 check_empty_files:
 	@for file in oval-definitions-*.xml; do \
-		[ -e "$$file" ] && [ ! -s "$$file" ] && rm -f $$file ; \
+		if [ -e "$$file" -a ! -s "$$file" ] ; then \
+			rm $$file ; \
+		fi \
 	done
 
 .PHONY : check_empty_files
