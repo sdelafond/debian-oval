@@ -50,7 +50,7 @@ def parseFile (path):
 			descrpatern = re.compile (r'description>(.*?)</define-tag>')
 			result = descrpatern.search (line)
 			if result:
-				data["description"] = result.groups()[0]
+				data["actualDescription"] = result.groups()[0]
 				continue
 				
 			sinfopatern = re.compile (r'<define-tag moreinfo>(.*?)')

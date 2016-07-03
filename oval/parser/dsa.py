@@ -60,6 +60,13 @@ def parseFile (path):
 			normDate = lambda (date): "-".join([(len(p) > 1 and p or "0"+p) for p in date.split("-")])
 			data["date"] = normDate(date)
 		
+		descrpatern = re.compile (r'(CVE-\d+-\d+)')
+		result = descrpatern.search (line)
+		if result:
+			data["description"] = result.groups()[0]
+			logging.log(logging.DEBUG, "Extracted CVE ID: " + data["description"])
+			continue
+		
 		refspatern = re.compile (r'secrefs>(.*?)</define-tag>')
 		result = refspatern.search (line)
 		if result:
