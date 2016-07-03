@@ -415,6 +415,10 @@ def createDefinition (dsa, dsaref):
 		logging.log(logging.WARNING, "DSA %s: Package information missed. Ignoring this DSA." % dsa)
 		dsaref["packages"] = ""
 
+	if not dsaref.has_key("title"):
+		logging.log(logging.WARNING, "DSA %s: title information missed." % dsa)
+		dsaref["title"] = ""
+
 	if not dsaref.has_key("description"):
 		logging.log(logging.WARNING, "DSA %s: Description information missed." % dsa)
 		dsaref["description"] = ""
@@ -453,7 +457,7 @@ def createDefinition (dsa, dsaref):
 			metadata.appendChild ( __createXMLElement ("reference", attrs = {"source" : source, "ref_id" : ref_id, "ref_url" : "http://cve.mitre.org/cgi-bin/cvename.cgi?name=%s" % ref_id}) )
 	
 	#TODO: move this info to other place
-	metadata.appendChild ( __createXMLElement ("description", dsaref.get("actualDescription","")))
+	metadata.appendChild ( __createXMLElement ("description", dsaref["description"]))
 	debianMetadata = __createXMLElement ("debian")
 	if dsaref.has_key("date"):
 		debianMetadata.appendChild ( __createXMLElement ("date", dsaref["date"]) )
