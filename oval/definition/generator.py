@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# oval.definitio.generator - generate well-formed xml file with 
+# oval.definition.generator - generate well-formed xml file with 
 # OVAL definitions of Debian Security Advisories.
 # Use various optimizations to minimize result XML
 #
