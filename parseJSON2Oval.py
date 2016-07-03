@@ -75,7 +75,7 @@ def parseJSON(json_data, year):
                                         'description': json_data[package][CVE].get("description",""),
                                         'moreinfo': "",
                                         'release': release, 'secrefs': CVE}})
-                logging.log(logging.DEBUG, "Created entry in dsaref %s" % ovalId)
+                logging.log(logging.DEBUG, "Created entry with ovalId %s" % ovalId)
 
 
 def get_json_data(json_file):
