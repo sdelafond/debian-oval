@@ -19,11 +19,12 @@ from oval.parser import dsa
 from oval.parser import wml
 
 
-dsaref = {}
+ovals = {}
 
 # TODO: these may need changed or reworked.
 DEBIAN_VERSION = {"wheezy" : "7.0", "jessie" : "8.2", "stretch" : "9.0",
-                  "sid" : "9.0", "etch" : "4.0", "squeeze":"6.0", "lenny":"5.0"}
+                  "sid" : "9.0", "etch" : "4.0", "squeeze":"6.0", "lenny":"5.0",
+                  "woody" : "3.0", "potato" : "2.2", "sarge" : "3.1"}
 
 def usage (prog = "parse-wml-oval.py"):
     """Print information about script flags and options"""
@@ -31,12 +32,55 @@ def usage (prog = "parse-wml-oval.py"):
     print """usage: %s [vh] [-d <directory>]\t-d\twhich directory use for
     dsa definition search\t-v\tverbose mode\t-h\tthis help""" % prog
 
-
-def printdsas(dsaref):
+def printdsas(ovals, year):
     """ Generate and print OVAL Definitions for collected DSA information """
 
-    ovalDefinitions = oval.definition.generator.createOVALDefinitions (dsaref)
+    ovalDefinitions = oval.definition.generator.createOVALDefinitions (ovals, year)
     oval.definition.generator.printOVALDefinitions (ovalDefinitions)
+
+def parsedirs (directory, postfix, depth):
+  """ Recursive search directory for DSA files contain postfix in their names.
+
+    For this files called oval.parser.dsa.parseFile() for extracting DSA information.
+  """
+
+  global ovals
+
+  if depth == 0:
+    logging.log(logging.DEBUG, "Maximum depth reached at directory " + directory)
+    return (0)
+  
+  for fileName in os.listdir (directory):
+    
+    path = "%s/%s" % (directory, fileName)
+    
+    logging.log (logging.DEBUG, "Checking %s (for %s at %s)" % (fileName, postfix, depth))
+    
+    if os.access(path, os.R_OK) and os.path.isdir (path) and not os.path.islink (path) and fileName[0] != '.':
+      logging.log(logging.DEBUG, "Entering directory " + path)
+      parsedirs (path, postfix, depth-1)
+
+    #Parse fileNames
+    if os.access(path, os.R_OK) and fileName.endswith(postfix) and fileName[0] != '.' and fileName[0] != '#':
+      result = dsa.parseFile (path)
+      if result:
+        if ovals.has_key (result[0]):
+          ovals[result[0]]["dsa"] = fileName[:-5].upper() # remove .data part
+          for (k, v) in result[1].iteritems():
+            ovals[result[0]][k] = v
+        else:
+          ovals[result[0]] = result[1]
+
+        # also parse corresponding wml file
+        wmlResult = wml.parseFile(path.replace('.data', '.wml'), DEBIAN_VERSION)
+        if wmlResult:
+          data, releases = wmlResult
+          for (k, v) in data.iteritems():
+            ovals[result[0]][k] = v
+          if not ovals[result[0]].get("release", None):
+            ovals[result[0]]['release']=releases
+
+  return 0
 
 def parseJSON(json_data, year):
     """
@@ -44,39 +88,37 @@ def parseJSON(json_data, year):
     :param json_data: Json_Data
     :return:
     """
+    global ovals
+
     today = date.today()
     logging.log(logging.DEBUG, "Start of JSON Parse.")
     for package in json_data:
         logging.log(logging.DEBUG, "Parsing package %s" % package)
-        for CVE in json_data[package]:
-            if CVE.find(year) < 0:
-                continue
-            logging.log(logging.DEBUG, "Getting releases for %s" % CVE)
+        for cve in json_data[package]:
+            logging.log(logging.DEBUG, "Getting releases for %s" % cve)
             release = {}
-            for rel in json_data[package][CVE]['releases']:
-                if json_data[package][CVE]['releases'][rel]['status'] != \
+            for rel in json_data[package][cve]['releases']:
+                if json_data[package][cve]['releases'][rel]['status'] != \
                         'resolved':
                     fixed_v = '0'
                     f_str = 'no'
                 else:
-                    fixed_v = json_data[package][CVE]['releases'][rel]['fixed_version']
+                    fixed_v = json_data[package][cve]['releases'][rel]['fixed_version']
                     f_str = 'yes'
                 release.update({DEBIAN_VERSION[rel]: {u'all': {
                     package: fixed_v}}})
 
-                # print json.dumps(json_data[package][CVE])
+                # print json.dumps(json_data[package][cve])
                 # sys.exit(1)
-                ovalId = oval.definition.generator.getOvalId(CVE)
-                dsaref.update({ovalId: {"packages": package,
-                                        'title': CVE,
+                ovals.update({cve: {"packages": package,
+                                        'title': cve,
                                         'vulnerable': "yes",
                                         'date': str(today.isoformat()),
                                         'fixed': f_str, 
-                                        'description': json_data[package][CVE].get("description",""),
-                                        'moreinfo': "",
-                                        'release': release, 'secrefs': CVE}})
-                logging.log(logging.DEBUG, "Created entry with ovalId %s" % ovalId)
-
+                                        'description': json_data[package][cve].get("description",""),
+                                        'secrefs': cve,
+                                        'release': release}})
+                logging.log(logging.DEBUG, "Created entry for %s" % cve)
 
 def get_json_data(json_file):
     """
@@ -105,6 +147,7 @@ def main(args):
     # unpack args
 
     json_file = args['JSONfile']
+    data_dir = args['data_directory']
     temp_file = args['tmp']
     year = args['year']
 
@@ -126,9 +169,9 @@ def main(args):
             os.remove(temp_file)
 
     parseJSON(json_data, year)
-    #parsedirs (opts['-d'], '.data', 2)
+    parsedirs(data_dir, '.data', 2)
     logging.log(logging.INFO, "Finished parsing JSON data")
-    printdsas(dsaref)
+    printdsas(ovals, year)
 
 if __name__ == "__main__":
     PARSER = argparse.ArgumentParser(description='Generates oval definitions '
@@ -141,6 +184,9 @@ if __name__ == "__main__":
                         help='Local JSON file to use. This will use a local '
                              'copy of the JSON file instead of downloading from'
                              ' it from the server. default=none', default=None)
+    PARSER.add_argument('-d', '--data-directory', type=str,
+                        help='Local directory to parse for data/wml file.'
+                        'default=.', default='.')
     PARSER.add_argument('-t', '--tmp', type=str,
                         help='Temporary file to download JSON file to. Warning:'
                              ' if this file already exists it will be removed '
