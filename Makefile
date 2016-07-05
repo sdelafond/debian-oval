@@ -18,12 +18,14 @@ all:: check_empty_files $(XMLFILES)
 
 install:: $(XMLDESTFILES)
 
-oval-definitions-%.xml: parseDsa2Oval.py \
+oval-definitions-%.xml: generate.py \
 	$(wildcard oval/*/*.py) \
 	$(wildcard $(ENGLISHDIR)/security/%/dsa-*.wml)  \
-	$(wildcard $(ENGLISHDIR)/security/%/dsa-*.data) 
+	$(wildcard $(ENGLISHDIR)/security/%/dla-*.wml)  \
+	$(wildcard $(ENGLISHDIR)/security/%/dsa-*.data) \
+	$(wildcard $(ENGLISHDIR)/security/%/dla-*.data)
 	@[ -e $(PYTHON) ] || { echo "ERROR: Required python binary $(PYTHON) is not available, aborting generation" >&2; exit 1; }
-	-$(PYTHON) parseDsa2Oval.py -d ../$(patsubst oval-definitions-%.xml,%,$@) >$@
+	-$(PYTHON) generate.py -d .. -y $(patsubst oval-definitions-%.xml,%,$@) >$@
 # Warn if empty files are generated
 # Note: They cannot be removed or the install target will fail later
 	@[ -s $@ ] || echo "WARNING: OVAL Definition $@ is empty, please review script and/or DSAs" 
