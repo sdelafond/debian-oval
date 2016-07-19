@@ -72,11 +72,8 @@ testsHash = {"arch" : {}, "release": {}, "obj": {}, "fileSte": {}, "unameSte" : 
 #We need more info about alpha, arm, hppa, bmips, lmips
 unameArchTable = {'i386' : 'i686', 'amd64' : 'x86-64', 'ia64' : 'ia64', 'powerpc' : 'ppc', 's390' : 's390x', 'm86k' : 'm86k'} 
 
-def __trimzero (val):
-	value = val[:]
-	while value[0] == "0":
-		value = value[1:]
-	return value
+def getOvalId(cve):
+  return cve[3:].replace('-', '')
 
 def __getNewId (type):
 	"""Generate new unique id for tests, objects or states
@@ -433,12 +430,11 @@ def createDefinition (dsa, dsaref):
 	doc = xml.dom.minidom.Document ()
 	
 	### Definition block: Metadata, Notes, Criteria
-	### TODO: Replace DSA id with unique id
-	definition = __createXMLElement ("definition", attrs = {"id" : "oval:org.debian:def:%s" % __trimzero(dsa), "version" : "1", "class" : "vulnerability"})
+	definition = __createXMLElement ("definition", attrs = {"id" : "oval:org.debian:def:%s" % getOvalId(dsaref["description"]), "version" : "1", "class" : "vulnerability"})
 	
 	### Definition : Metadata : title, affected, reference, description ###
 	metadata = __createXMLElement ("metadata")
-	metadata.appendChild (__createXMLElement ("title", dsaref["description"]))
+	metadata.appendChild (__createXMLElement ("title", dsaref["title"]))
 
 	### Definition : Metadata : Affected : platform, product ###
 	affected = __createXMLElement ("affected", attrs = {"family" : "unix"})

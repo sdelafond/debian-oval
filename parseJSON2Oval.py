@@ -66,7 +66,7 @@ def parseJSON(json_data, year):
 
                 # print json.dumps(json_data[package][CVE])
                 # sys.exit(1)
-                ovalId = CVE[3:].replace('-', '')
+                ovalId = oval.definition.generator.getOvalId(CVE)
                 dsaref.update({ovalId: {"packages": package,
                                         'description': CVE, # "title" element in XML
                                         'vulnerable': "yes",
