@@ -13,6 +13,7 @@ import sys
 import logging
 import argparse
 import json
+import re
 from datetime import date
 import oval.definition.generator
 from oval.parser import dsa
@@ -38,7 +39,7 @@ def printdsas(ovals, year):
     ovalDefinitions = oval.definition.generator.createOVALDefinitions (ovals, year)
     oval.definition.generator.printOVALDefinitions (ovalDefinitions)
 
-def parsedirs (directory, postfix, depth):
+def parsedirs (directory, regex, depth):
   """ Recursive search directory for DSA files contain postfix in their names.
 
     For this files called oval.parser.dsa.parseFile() for extracting DSA information.
@@ -54,31 +55,43 @@ def parsedirs (directory, postfix, depth):
     
     path = "%s/%s" % (directory, fileName)
     
-    logging.log (logging.DEBUG, "Checking %s (for %s at %s)" % (fileName, postfix, depth))
+    logging.log (logging.DEBUG, "Checking %s (for %s at %s)" % (fileName, regex, depth))
     
     if os.access(path, os.R_OK) and os.path.isdir (path) and not os.path.islink (path) and fileName[0] != '.':
       logging.log(logging.DEBUG, "Entering directory " + path)
-      parsedirs (path, postfix, depth-1)
+      parsedirs (path, regex, depth-1)
 
     #Parse fileNames
-    if os.access(path, os.R_OK) and fileName.endswith(postfix) and fileName[0] != '.' and fileName[0] != '#':
-      result = dsa.parseFile (path)
+    if os.access(path, os.R_OK) and regex.search(fileName) and fileName[0] != '.' and fileName[0] != '#':
+      result = dsa.parseFile(path)
       if result:
-        if ovals.has_key (result[0]):
-          ovals[result[0]]["dsa"] = fileName[:-5].upper() # remove .data part
+        cve = result[0]
+        if ovals.has_key(cve):
           for (k, v) in result[1].iteritems():
-            ovals[result[0]][k] = v
+            ovals[cve][k] = v
         else:
-          ovals[result[0]] = result[1]
+          ovals[cve] = result[1]
 
+        dsaRef = fileName[:-5].upper() # remove .data part
+        
         # also parse corresponding wml file
         wmlResult = wml.parseFile(path.replace('.data', '.wml'), DEBIAN_VERSION)
         if wmlResult:
           data, releases = wmlResult
           for (k, v) in data.iteritems():
-            ovals[result[0]][k] = v
-          if not ovals[result[0]].get("release", None):
-            ovals[result[0]]['release']=releases
+            if k == "moreinfo":
+              if not "moreinfo" in ovals[cve]:
+                ovals[cve]["moreinfo"] = "\n"
+              # aggregate all advisories
+              ovals[cve][k] += "%s%s\n" % (dsaRef, v)
+            elif k in ('description'): # some keys shouldn't be clobbered
+              if not k in ovals[cve]:
+                ovals[cve][k] = v
+            else:
+              ovals[cve][k] = v
+          if not "release" in ovals[cve]:
+            ovals[cve]["release"] = {}
+          ovals[cve]['release'].update(releases)
 
   return 0
 
@@ -169,7 +182,8 @@ def main(args):
             os.remove(temp_file)
 
     parseJSON(json_data, year)
-    parsedirs(data_dir, '.data', 2)
+    parsedirs(data_dir, re.compile('^dsa.+\.data$'), 2)
+    parsedirs(data_dir, re.compile('^dla.+\.data$'), 2)
     logging.log(logging.INFO, "Finished parsing JSON data")
     printdsas(ovals, year)
 
