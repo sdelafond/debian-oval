@@ -9,6 +9,8 @@
 #    <isvulnerable>
 #    <fixed>
 #
+# (c) 2016 Sebastien Delafond <sdelafond@gmail.com>
+# (c) 2015 Nicholas Luedtke
 # (c) 2007 Pavel Vinogradov     
 # (c) 2004 Javier Fernandez-Sanguino                                                                                                  
 # Licensed under the GNU General Public License version 2.
