@@ -16,7 +16,7 @@ import oval.definition.generator
 from oval.parser import dsa
 from oval.parser import wml
 
-dsaref = {}
+ovals = {}
 
 def usage (prog = "parse-wml-oval.py"):
   """Print information about script flags and options"""
@@ -28,10 +28,10 @@ usage: %s [vh] [-d <directory>]
 \t-h\tthis help
   """ % prog
    
-def printdsas (dsaref):
+def printdsas (ovals):
     """ Generate and print OVAL Definitions for collected DSA information """
     
-    ovalDefinitions = oval.definition.generator.createOVALDefinitions (dsaref)
+    ovalDefinitions = oval.definition.generator.createOVALDefinitions (ovals)
     oval.definition.generator.printOVALDefinitions (ovalDefinitions)
 
 def parsedirs (directory, postfix, depth):
@@ -39,6 +39,8 @@ def parsedirs (directory, postfix, depth):
 
     For this files called oval.parser.dsa.parseFile() for extracting DSA information.
   """
+
+  global ovals
 
   if depth == 0:
     logging.log(logging.DEBUG, "Maximum depth reached at directory " + directory)
@@ -54,25 +56,24 @@ def parsedirs (directory, postfix, depth):
       logging.log(logging.DEBUG, "Entering directory " + path)
       parsedirs (path, postfix, depth-1)
 
-        #Parse DSA data files
+    #Parse files
     if os.access(path, os.R_OK) and file.endswith(postfix) and file[0] != '.' and file[0] != '#':
       result = dsa.parseFile (path)
       if result:
-				if dsaref.has_key (result[0]):
+        if ovals.has_key (result[0]):
           for (k, v) in result[1].iteritems():
-						dsaref[result[0]][k] = v
+            ovals[result[0]][k] = v
         else:
-					dsaref[result[0]] = result[1]
+          ovals[result[0]] = result[1]
 
-        #Parse DSA wml descriptions
-		if os.access(path, os.R_OK) and file.endswith(".wml") and file[0] != '.' and file[0] != '#':
-			result = wml.parseFile(path)
-			if result:
-				if dsaref.has_key (result[0]):
-					for (k, v) in result[1].iteritems():
-						dsaref[result[0]][k] = v
-				else:
-					dsaref[result[0]] = result[1]
+        # also parse corresponding wml file
+        wmlResult = wml.parseFile(path.replace('.data', '.wml'))
+        if wmlResult:
+          data, releases = wmlResult
+          for (k, v) in data.iteritems():
+            ovals[result[0]][k] = v
+          if not ovals[result[0]].get("release", None):
+            ovals[result[0]]['release']=releases
 
   return 0
 
@@ -103,4 +104,4 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.WARNING)
         
     parsedirs (opts['-d'], '.data', 2)
-    printdsas(dsaref)
+    printdsas(ovals)

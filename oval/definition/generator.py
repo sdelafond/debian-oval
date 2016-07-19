@@ -431,10 +431,8 @@ def createDefinition (dsa, dsaref):
     logging.log(logging.WARNING, "DSA %s: Secrefs information missed." % dsa)
     dsaref["secrefs"] = ""
 
-	doc = xml.dom.minidom.Document ()
-	
   ### Definition block: Metadata, Notes, Criteria
-	definition = __createXMLElement ("definition", attrs = {"id" : "oval:org.debian:def:%s" % getOvalId(dsaref["description"]), "version" : "1", "class" : "vulnerability"})
+  definition = __createXMLElement ("definition", attrs = {"id" : "oval:org.debian:def:%s" % getOvalId(dsaref["title"]), "version" : "1", "class" : "vulnerability"})
 
   ### Definition : Metadata : title, affected, reference, description ###
   metadata = __createXMLElement ("metadata")

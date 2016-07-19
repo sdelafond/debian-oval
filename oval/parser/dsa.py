@@ -98,7 +98,7 @@ def parseFile (path):
     result = versionpatern.search (line)
     if result:
       fdeb_ver = result.groups()[0]
-			
+
       if fdeb_ver:
         deb_ver = fdeb_ver 
         fdeb_ver = None
@@ -125,4 +125,5 @@ def parseFile (path):
         else:
           data["release"][deb_ver][architecture] = {package : version}
   
-	return (dsa, data)
+  if "title" in data:
+    return data["title"], data
