@@ -457,7 +457,7 @@ def createDefinition (dsa, dsaref):
 			metadata.appendChild ( __createXMLElement ("reference", attrs = {"source" : source, "ref_id" : ref_id, "ref_url" : "http://cve.mitre.org/cgi-bin/cvename.cgi?name=%s" % ref_id}) )
 	
 	#TODO: move this info to other place
-	metadata.appendChild ( __createXMLElement ("description", "What information can i put there?"))
+	metadata.appendChild ( __createXMLElement ("description", dsaref.get("actualDescription","")))
 	debianMetadata = __createXMLElement ("debian")
 	if dsaref.has_key("date"):
 		debianMetadata.appendChild ( __createXMLElement ("date", dsaref["date"]) )

@@ -38,16 +38,14 @@ def printdsas(dsaref):
     ovalDefinitions = oval.definition.generator.createOVALDefinitions (dsaref)
     oval.definition.generator.printOVALDefinitions (ovalDefinitions)
 
-def parseJSON(json_data, id_num, year):
+def parseJSON(json_data, year):
     """
     Parse the JSON data and extract information needed for OVAL definitions
-    :param id_num: int id number to start at for defintions
     :param json_data: Json_Data
     :return:
     """
     today = date.today()
     logging.log(logging.DEBUG, "Start of JSON Parse.")
-    d_num = id_num
     for package in json_data:
         logging.log(logging.DEBUG, "Parsing package %s" % package)
         for CVE in json_data[package]:
@@ -66,14 +64,18 @@ def parseJSON(json_data, id_num, year):
                 release.update({DEBIAN_VERSION[rel]: {u'all': {
                     package: fixed_v}}})
 
-                dsaref.update({str(d_num): {"packages": package,
-                                           'description': "",
-                                    'vulnerable': "yes",
-                                    'date': str(today.isoformat()),
-                                    'fixed': f_str, 'moreinfo': "",
-                                    'release': release, 'secrefs': CVE}})
-                logging.log(logging.DEBUG, "Created entry in dsaref %s" % d_num)
-                d_num += 1
+                # print json.dumps(json_data[package][CVE])
+                # sys.exit(1)
+                ovalId = CVE[3:].replace('-', '')
+                dsaref.update({ovalId: {"packages": package,
+                                        'description': CVE, # "title" element in XML
+                                        'vulnerable': "yes",
+                                        'date': str(today.isoformat()),
+                                        'fixed': f_str, 
+                                        'actualDescription': json_data[package][CVE].get("description",""),
+                                        'moreinfo': "",
+                                        'release': release, 'secrefs': CVE}})
+                logging.log(logging.DEBUG, "Created entry in dsaref %s" % ovalId)
 
 
 def get_json_data(json_file):
@@ -105,7 +107,6 @@ def main(args):
     json_file = args['JSONfile']
     temp_file = args['tmp']
     year = args['year']
-    id_num = args['id']
 
     if json_file:
         json_data = get_json_data(json_file)
@@ -124,7 +125,7 @@ def main(args):
             logging.log(logging.DEBUG, "Removing file %s" % temp_file)
             os.remove(temp_file)
 
-    parseJSON(json_data, id_num, year)
+    parseJSON(json_data, year)
     #parsedirs (opts['-d'], '.data', 2)
     logging.log(logging.INFO, "Finished parsing JSON data")
     printdsas(dsaref)
