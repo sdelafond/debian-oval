@@ -327,7 +327,7 @@ def createPlatformDefinition (release, data, dsa):
 
 	# Handle architecture independed section
 	if data.has_key ("all"):
-		archIndepCriteria = __createXMLElement ("criteria", attrs={"comment" : "Architecture independet section", "operator" : "AND"})
+		archIndepCriteria = __createXMLElement ("criteria", attrs={"comment" : "Architecture independent section", "operator" : "AND"})
 		
 		archIndepCriteria.appendChild ( __createXMLElement ("criterion", attrs = {"test_ref" : __createTest("arch", "all"), "comment" : "all architecture"}))
 		#Build packages section only if we have more then one package
