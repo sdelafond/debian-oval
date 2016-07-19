@@ -15,14 +15,10 @@ import os
 import sys
 import logging
 
-# TODO: these may need changed or reworked.
-DEBIAN_VERSION = {"wheezy" : "7.0", "jessie" : "8.2", "stretch" : "9.0",
-                  "sid" : "9.0", "etch" : "4.0", "squeeze":"6.0", "lenny":"5.0"}
-
 # Format of wml files is:
 #<define-tag description>DESCRIPTION</define-tag>
 #<define-tag moreinfo>Multiline information</define-tag>
-def parseFile (path):
+def parseFile (path, debianVersion):
   """ Parse wml file with description of Debian Security Advisories 
 	
   Keyword arguments:
@@ -81,11 +77,11 @@ def parseFile (path):
       if result:
         deb_version = result.groups()[0]
 
-      new_version_pattern = re.compile(r'version (.*?).</p>')
+      new_version_pattern = re.compile(r'version ([a-z]+).</p>')
       result = new_version_pattern.search(line)
       if result and deb_version != "":
         pack_ver = result.groups()[0]
-        releases.update({DEBIAN_VERSION[deb_version]: {u"all": {grabPackName(path) : pack_ver}}})
+        releases.update({debianVersion[deb_version]: {u"all": {grabPackName(path) : pack_ver}}})
 
   except IOError:
     logging.log (logging.ERROR, "Can't work with file %s" % path)
