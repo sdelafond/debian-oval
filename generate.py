@@ -174,6 +174,8 @@ def main(args):
         logging.log(logging.DEBUG, "Issuing wget for JSON file")
         args = ['wget', 'https://security-tracker.debian.org/tracker/data/json',
                 '-O', temp_file]
+        if os.path.isdir('/etc/ssl/ca-debian'):
+            args.insert(1, '--ca-directory=/etc/ssl/ca-debian')
         call(args)
         logging.log(logging.DEBUG, "File %s received" % temp_file)
         json_data = get_json_data(temp_file)
