@@ -15,6 +15,10 @@ import os
 import sys
 import logging
 
+# TODO: these may need changed or reworked.
+DEBIAN_VERSION = {"wheezy" : "7.0", "jessie" : "8.2", "stretch" : "9.0",
+                  "sid" : "9.0", "etch" : "4.0", "squeeze":"6.0", "lenny":"5.0"}
+
 # Format of wml files is:
 #<define-tag description>DESCRIPTION</define-tag>
 #<define-tag moreinfo>Multiline information</define-tag>
@@ -28,6 +32,9 @@ def parseFile (path):
 	
   data = {}
   moreinfo = False
+  pack_ver = ""
+  deb_version = ""
+  releases = {}
 
   filename = os.path.basename (path)
 	
@@ -46,7 +53,6 @@ def parseFile (path):
 
     for line in wmlFile:
       line= line.decode ("ISO-8859-2")
-				
       descrpatern = re.compile (r'description>(.*?)</define-tag>')
       result = descrpatern.search (line)
       if result:
@@ -68,12 +74,23 @@ def parseFile (path):
 			
       if moreinfo:
         data["moreinfo"] += line
-				continue
+#        continue
+
+      dversion_pattern = re.compile(r'distribution \((.*?)\)')
+      result = dversion_pattern.search(line)
+      if result:
+        deb_version = result.groups()[0]
+
+      new_version_pattern = re.compile(r'version (.*?).</p>')
+      result = new_version_pattern.search(line)
+      if result and deb_version != "":
+        pack_ver = result.groups()[0]
+        releases.update({DEBIAN_VERSION[deb_version]: {u"all": {grabPackName(path) : pack_ver}}})
 
   except IOError:
     logging.log (logging.ERROR, "Can't work with file %s" % path)
 	
-	return (dsa, data)
+  return data, releases
 
 def __parseMoreinfo (info):
 	""" Remove unnecessary information form moreinfo tag"""
@@ -88,3 +105,19 @@ def __parseMoreinfo (info):
 		result += "\n" + par
 	
 	return result
+
+def grabPackName(path):
+    """
+    :param path: full path to wml file
+    :return: string: Package Name
+    """
+
+    try:
+        wmlFile = open(path)
+        package_name = re.compile (r'We recommend that you upgrade your (.*?) packages')
+        for line in wmlFile:
+            result = package_name.search(line)
+            if result:
+                return result.groups()[0]
+    except IOError:
+        logging.log (logging.ERROR, "Can't work with file %s" % path)
