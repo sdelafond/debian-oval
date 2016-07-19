@@ -68,11 +68,11 @@ def parseJSON(json_data, year):
                 # sys.exit(1)
                 ovalId = oval.definition.generator.getOvalId(CVE)
                 dsaref.update({ovalId: {"packages": package,
-                                        'description': CVE, # "title" element in XML
+                                        'title': CVE,
                                         'vulnerable': "yes",
                                         'date': str(today.isoformat()),
                                         'fixed': f_str, 
-                                        'actualDescription': json_data[package][CVE].get("description",""),
+                                        'description': json_data[package][CVE].get("description",""),
                                         'moreinfo': "",
                                         'release': release, 'secrefs': CVE}})
                 logging.log(logging.DEBUG, "Created entry in dsaref %s" % ovalId)
