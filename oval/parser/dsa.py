@@ -63,8 +63,8 @@ def parseFile (path):
 		descrpatern = re.compile (r'(CVE-\d+-\d+)')
 		result = descrpatern.search (line)
 		if result:
-			data["description"] = result.groups()[0]
-			logging.log(logging.DEBUG, "Extracted CVE ID: " + data["description"])
+			data["title"] = result.groups()[0]
+			logging.log(logging.DEBUG, "Extracted CVE ID: " + data["title"])
 			continue
 		
 		refspatern = re.compile (r'secrefs>(.*?)</define-tag>')
