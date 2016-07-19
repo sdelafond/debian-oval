@@ -1,11 +1,16 @@
 * Un-hardcode DEBIAN_VERSION from generate.py. Instead, fetch from
   some .debian.org URL.
+  (want)
 
 * Major refactoring/code clean-up still required.
+  (nice)
 
 * Move per-year filtering logic out of the Makefile and into the
   python code itself, so we parse wml/data and JSON only once instead
   of as many times as we have years.
+  (must)
 
+* Move from per-year XML to per-distribution ones (like SuSE does)
+  (nice)
 
 
