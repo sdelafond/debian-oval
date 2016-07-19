@@ -428,11 +428,6 @@ def createDefinition (cve, oval):
     logging.log(logging.WARNING, "CVE %s: Moreinfo information missed." % cve)
     oval["moreinfo"] = ""
 
-  if not oval.has_key("dsa"):
-    logging.log(logging.WARNING, "CVE %s: DSA information missed." % cve)
-  elif oval["moreinfo"]:
-    oval["moreinfo"] = "\n%s%s" % (oval["dsa"], oval["moreinfo"])
-
   if not oval.has_key("secrefs"):
     logging.log(logging.WARNING, "CVE %s: Secrefs information missed." % cve)
     oval["secrefs"] = ""

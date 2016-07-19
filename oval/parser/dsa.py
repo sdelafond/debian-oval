@@ -39,14 +39,7 @@ def parseFile (path):
   
   filename = os.path.basename (path)
 
-  patern = re.compile(r'dsa-(\d+)')
-  result = patern.search(filename)
-  if result:
-    dsa = result.groups()[0]
-  else:
-    logging.log(logging.WARNING, "File %s does not look like a proper DSA, not checking" % filename)
-    return (None)
-
+  dsa = os.path.basename(path)[:-5]
   logging.log (logging.DEBUG, "Parsing DSA %s from file %s" % (dsa, filename))
 
   dsaFile = open(path)

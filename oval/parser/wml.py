@@ -32,20 +32,15 @@ def parseFile (path, debianVersion):
   deb_version = ""
   releases = {}
 
+  dsa = os.path.basename(path)[:-5]
   filename = os.path.basename (path)
-	
-  patern = re.compile(r'dsa-(\d+)')
-  result = patern.search(filename)
-  if result:
-    dsa = result.groups()[0]
-  else:
-    logging.log(logging.WARNING, "File %s does not look like a proper DSA wml description, not checking" % filename)
-    return (None)
 	
   logging.log (logging.DEBUG, "Parsing information for DSA %s from wml file %s" % (dsa, filename))
 	
   try:
     wmlFile = open(path)
+
+    dversion_pattern = re.compile(r'(%s)' % '|'.join(debianVersion.keys()), re.IGNORECASE)
 
     for line in wmlFile:
       line= line.decode ("ISO-8859-2")
@@ -72,12 +67,11 @@ def parseFile (path, debianVersion):
         data["moreinfo"] += line
 #        continue
 
-      dversion_pattern = re.compile(r'distribution \((.*?)\)')
       result = dversion_pattern.search(line)
       if result:
-        deb_version = result.groups()[0]
+        deb_version = result.groups()[0].lower()
 
-      new_version_pattern = re.compile(r'version ([a-z]+).</p>')
+      new_version_pattern = re.compile(r'version (.+?)\.(</p>|\s)')
       result = new_version_pattern.search(line)
       if result and deb_version != "":
         pack_ver = result.groups()[0]
