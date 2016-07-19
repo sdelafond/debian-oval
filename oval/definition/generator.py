@@ -517,7 +517,7 @@ def createOVALDefinitions (ovals, year):
   keyids.sort()
   for cve in keyids:
     try:
-      if cve.find(year) < 0:
+      if cve.find("CVE-%s" % year) < 0:
         continue
       definitions.appendChild (createDefinition(cve, ovals[cve]))
     except CVEFormatException:
