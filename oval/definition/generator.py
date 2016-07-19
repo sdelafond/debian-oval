@@ -23,7 +23,7 @@ regex = re.compile(RE_XML_ILLEGAL)
 class OvalGeneratorException (Exception):
     pass
 
-class DSAFormatException (OvalGeneratorException):
+class CVEFormatException (OvalGeneratorException):
   code = 1
   
 def __createXMLElement (name, descr = None, attrs = {}):
@@ -299,7 +299,7 @@ def __createGeneratorHeader ():
 
   return (generator)
 
-def createPlatformDefinition (release, data, dsa):
+def createPlatformDefinition (release, data, cve):
   """ Generate OVAL definitions for current release
   
     Generate full criteria tree for specified release. Tests, states and objects 
@@ -309,13 +309,13 @@ def createPlatformDefinition (release, data, dsa):
     Argument keywords:
     release -- Debian release
     data -- dict with information about packages
-    dsa - DSA id
+    cve - CVE id
     
     return Generated XML fragment
   """
   #Raise exception if we receive too small data
   if len(data) == 0:
-    logging.log(logging.WARNING, "DSA %s: Information of affected platforms is not available." % dsa)
+    logging.log(logging.WARNING, "CVE %s: Information of affected platforms is not available." % cve)
   
   softwareCriteria = __createXMLElement ("criteria", attrs = {"comment" : "Release section", "operator" : "AND"})
   softwareCriteria.appendChild ( __createXMLElement ("criterion", attrs={"test_ref" : __createTest("release", release), "comment" : "Debian %s is installed" % release}))
@@ -397,90 +397,97 @@ def createPlatformDefinition (release, data, dsa):
   
   return (softwareCriteria)
 
-def createDefinition (dsa, dsaref):
+def createDefinition (cve, oval):
   """ Generate OVAL header of Definition tag
   
     Print general informaton about OVAL definition. Use createPlatformDefinition for generate criteria 
     sections for each affected release.
     
     Argument keywords:
-    dsa -- DSA dentificator
-    dsaref -- DSA parsed data
-  """  
-  if not dsaref.has_key("release"):
-    logging.log(logging.WARNING, "DSA %s: Release definition not well formatted. Ignoring this DSA." % dsa)
-    raise DSAFormatException
+    cve -- CVE dentificator
+    oval -- CVE parsed data
+  """
+  if not oval.has_key("release"):
+    logging.log(logging.WARNING, "CVE %s: Release definition not well formatted. Ignoring this CVE." % cve)
+    raise CVEFormatException
     
-  if not dsaref.has_key("packages"):
-    logging.log(logging.WARNING, "DSA %s: Package information missed. Ignoring this DSA." % dsa)
-    dsaref["packages"] = ""
+  if not oval.has_key("packages"):
+    logging.log(logging.WARNING, "CVE %s: Package information missed. Ignoring this CVE." % cve)
+    oval["packages"] = ""
+    return None
 
-  if not dsaref.has_key("title"):
-    logging.log(logging.WARNING, "DSA %s: title information missed." % dsa)
-    dsaref["title"] = ""
+  if not oval.has_key("title"):
+    logging.log(logging.WARNING, "CVE %s: title information missed." % cve)
+    oval["title"] = ""
 
-  if not dsaref.has_key("description"):
-    logging.log(logging.WARNING, "DSA %s: Description information missed." % dsa)
-    dsaref["description"] = ""
+  if not oval.has_key("description"):
+    logging.log(logging.WARNING, "CVE %s: Description information missed." % cve)
+    oval["description"] = ""
 
-  if not dsaref.has_key("moreinfo"):
-    logging.log(logging.WARNING, "DSA %s: Moreinfo information missed." % dsa)
-    dsaref["moreinfo"] = ""
-  
-  if not dsaref.has_key("secrefs"):
-    logging.log(logging.WARNING, "DSA %s: Secrefs information missed." % dsa)
-    dsaref["secrefs"] = ""
+  if not oval.has_key("moreinfo"):
+    logging.log(logging.WARNING, "CVE %s: Moreinfo information missed." % cve)
+    oval["moreinfo"] = ""
+
+  if not oval.has_key("dsa"):
+    logging.log(logging.WARNING, "CVE %s: DSA information missed." % cve)
+  elif oval["moreinfo"]:
+    oval["moreinfo"] = "\n%s%s" % (oval["dsa"], oval["moreinfo"])
+
+  if not oval.has_key("secrefs"):
+    logging.log(logging.WARNING, "CVE %s: Secrefs information missed." % cve)
+    oval["secrefs"] = ""
 
   ### Definition block: Metadata, Notes, Criteria
-  definition = __createXMLElement ("definition", attrs = {"id" : "oval:org.debian:def:%s" % getOvalId(dsaref["title"]), "version" : "1", "class" : "vulnerability"})
+  ovalId = getOvalId(cve)
+  definition = __createXMLElement ("definition", attrs = {"id" : "oval:org.debian:def:%s" % ovalId, "version" : "1", "class" : "vulnerability"})
 
   ### Definition : Metadata : title, affected, reference, description ###
   metadata = __createXMLElement ("metadata")
-  metadata.appendChild (__createXMLElement ("title", dsaref["title"]))
+  metadata.appendChild (__createXMLElement ("title", oval["title"]))
 
   ### Definition : Metadata : Affected : platform, product ###
   affected = __createXMLElement ("affected", attrs = {"family" : "unix"})
-  for platform in dsaref["release"]:
+  for platform in oval["release"]:
     affected.appendChild ( __createXMLElement ("platform", "Debian GNU/Linux %s" % platform))
-  affected.appendChild ( __createXMLElement ("product", dsaref.get("packages")))
+  affected.appendChild ( __createXMLElement ("product", oval.get("packages")))
     
   metadata.appendChild (affected)
   ### Definition : Metadata : Affected : END ###
 
   refpatern = re.compile (r'((CVE|CAN)-[\d-]+)')
-  for ref in dsaref.get("secrefs").split(" "):
+  for ref in oval.get("secrefs").split(" "):
     result = refpatern.search(ref)
     if result:
       (ref_id, source) = result.groups()
       metadata.appendChild ( __createXMLElement ("reference", attrs = {"source" : source, "ref_id" : ref_id, "ref_url" : "http://cve.mitre.org/cgi-bin/cvename.cgi?name=%s" % ref_id}) )
   
   #TODO: move this info to other place
-  metadata.appendChild ( __createXMLElement ("description", dsaref["description"]))
+  metadata.appendChild ( __createXMLElement ("description", oval["description"]))
   debianMetadata = __createXMLElement ("debian")
-  if dsaref.has_key("date"):
-    debianMetadata.appendChild ( __createXMLElement ("date", dsaref["date"]) )
-  debianMetadata.appendChild ( __createXMLElement ("moreinfo", dsaref["moreinfo"]) )
+  if oval.has_key("date"):
+    debianMetadata.appendChild ( __createXMLElement ("date", oval["date"]) )
+  debianMetadata.appendChild ( __createXMLElement ("moreinfo", oval["moreinfo"]))
   metadata.appendChild (debianMetadata)
   definition.appendChild ( metadata )
 
   ### Definition : Criteria ###
-  if len(dsaref["release"]) > 1:
+  if len(oval["release"]) > 1:
     #f we have more than one release - generate additional criteria section
     platformCriteria = __createXMLElement ("criteria", attrs = {"comment" : "Platform section", "operator" : "OR"})
     definition.appendChild (platformCriteria)
   else:
     platformCriteria = definition
   
-  for platform in dsaref["release"]:
-    data = dsaref["release"][platform]
-    platformCriteria.appendChild (createPlatformDefinition(platform, data, dsa))
+  for platform in oval["release"]:
+    data = oval["release"][platform]
+    platformCriteria.appendChild (createPlatformDefinition(platform, data, cve))
     
   ### Definition : Criteria END ###
 
   return (definition)
 
-def createOVALDefinitions (dsaref):
-  """ Generate XML OVAL definition tree for range of DSA
+def createOVALDefinitions (ovals, year):
+  """ Generate XML OVAL definition tree for range of CVE
   
     Generate namespace section and use other functions to generate definitions,
     tests, objects and states subsections.
@@ -506,13 +513,15 @@ def createOVALDefinitions (dsaref):
   
   definitions = doc.createElement ("definitions")
   
-  keyids = dsaref.keys()
+  keyids = ovals.keys()
   keyids.sort()
-  for dsa in keyids:
+  for cve in keyids:
     try:
-      definitions.appendChild (createDefinition(dsa, dsaref[dsa]))
-    except DSAFormatException:
-      logging.log (logging.WARNING, "DSA %s: Bad data file. Ignoring this DSA." % dsa)
+      if cve.find(year) < 0:
+        continue
+      definitions.appendChild (createDefinition(cve, ovals[cve]))
+    except CVEFormatException:
+      logging.log (logging.WARNING, "CVE %s: Bad data file. Ignoring this CVE." % cve)
       
   root.appendChild (definitions)
   
