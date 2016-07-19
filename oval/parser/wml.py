@@ -19,59 +19,59 @@ import logging
 #<define-tag description>DESCRIPTION</define-tag>
 #<define-tag moreinfo>Multiline information</define-tag>
 def parseFile (path):
-	""" Parse wml file with description of Debian Security Advisories 
+  """ Parse wml file with description of Debian Security Advisories 
 	
-	Keyword arguments:
-	path -- full path to wml file
+  Keyword arguments:
+  path -- full path to wml file
 	
-	return list (dsa id, tags data)"""
+  return list (dsa id, tags data)"""
 	
-	data = {}
-	moreinfo = False
+  data = {}
+  moreinfo = False
+
+  filename = os.path.basename (path)
 	
-	filename = os.path.basename (path)
+  patern = re.compile(r'dsa-(\d+)')
+  result = patern.search(filename)
+  if result:
+    dsa = result.groups()[0]
+  else:
+    logging.log(logging.WARNING, "File %s does not look like a proper DSA wml description, not checking" % filename)
+    return (None)
 	
-	patern = re.compile(r'dsa-(\d+)')
-	result = patern.search(filename)
-	if result:
-		dsa = result.groups()[0]
-	else:
-		logging.log(logging.WARNING, "File %s does not look like a proper DSA wml description, not checking" % filename)
-		return (None)
+  logging.log (logging.DEBUG, "Parsing information for DSA %s from wml file %s" % (dsa, filename))
 	
-	logging.log (logging.DEBUG, "Parsing information for DSA %s from wml file %s" % (dsa, filename))
-	
-	try:
-		wmlFile = open(path)
-		
-		for line in wmlFile:
-			line= line.decode ("ISO-8859-2")
+  try:
+    wmlFile = open(path)
+
+    for line in wmlFile:
+      line= line.decode ("ISO-8859-2")
 				
-			descrpatern = re.compile (r'description>(.*?)</define-tag>')
-			result = descrpatern.search (line)
-			if result:
-				data["description"] = result.groups()[0]
-				continue
+      descrpatern = re.compile (r'description>(.*?)</define-tag>')
+      result = descrpatern.search (line)
+      if result:
+        data["description"] = result.groups()[0]
+        continue
 				
-			sinfopatern = re.compile (r'<define-tag moreinfo>(.*?)')
-			result = sinfopatern.search (line)
-			if result:
-				moreinfo = True
-				data["moreinfo"] = result.groups()[0] 
-				continue
+      sinfopatern = re.compile (r'<define-tag moreinfo>(.*?)')
+      result = sinfopatern.search (line)
+      if result:
+        moreinfo = True
+        data["moreinfo"] = result.groups()[0] 
+        continue
 			
-			einfopatern = re.compile (r'</define-tag>')
-			if moreinfo and einfopatern.search (line):
-				data["moreinfo"] = __parseMoreinfo(data["moreinfo"])
- 				moreinfo = False
-				continue
+      einfopatern = re.compile (r'</define-tag>')
+      if moreinfo and einfopatern.search (line):
+        data["moreinfo"] = __parseMoreinfo(data["moreinfo"])
+        moreinfo = False
+        continue
 			
-			if moreinfo:
-				data["moreinfo"] += line
+      if moreinfo:
+        data["moreinfo"] += line
 				continue
-			
-	except IOError:
-		logging.log (logging.ERROR, "Can't work with file %s" % path)
+
+  except IOError:
+    logging.log (logging.ERROR, "Can't work with file %s" % path)
 	
 	return (dsa, data)
 

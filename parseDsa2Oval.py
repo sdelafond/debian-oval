@@ -19,14 +19,14 @@ from oval.parser import wml
 dsaref = {}
 
 def usage (prog = "parse-wml-oval.py"):
-	"""Print information about script flags and options"""
+  """Print information about script flags and options"""
 
-	print """
+  print """
 usage: %s [vh] [-d <directory>]
 \t-d\twhich directory use for dsa definition search
 \t-v\tverbose mode
 \t-h\tthis help
-	""" % prog
+  """ % prog
    
 def printdsas (dsaref):
     """ Generate and print OVAL Definitions for collected DSA information """
@@ -35,35 +35,35 @@ def printdsas (dsaref):
     oval.definition.generator.printOVALDefinitions (ovalDefinitions)
 
 def parsedirs (directory, postfix, depth):
-	""" Recursive search directory for DSA files contain postfix in their names.
+  """ Recursive search directory for DSA files contain postfix in their names.
 
-		For this files called oval.parser.dsa.parseFile() for extracting DSA information.
-	"""
+    For this files called oval.parser.dsa.parseFile() for extracting DSA information.
+  """
 
-	if depth == 0:
-		logging.log(logging.DEBUG, "Maximum depth reached at directory " + directory)
-		return (0)
-	
-	for file in os.listdir (directory):
-		
-		path = "%s/%s" % (directory, file)
-		
-		logging.log (logging.DEBUG, "Checking %s (for %s at %s)" % (file, postfix, depth))
-		
-		if os.access(path, os.R_OK) and os.path.isdir (path) and not os.path.islink (path) and file[0] != '.':
-			logging.log(logging.DEBUG, "Entering directory " + path)
-			parsedirs (path, postfix, depth-1)
-		
+  if depth == 0:
+    logging.log(logging.DEBUG, "Maximum depth reached at directory " + directory)
+    return (0)
+  
+  for file in os.listdir (directory):
+    
+    path = "%s/%s" % (directory, file)
+    
+    logging.log (logging.DEBUG, "Checking %s (for %s at %s)" % (file, postfix, depth))
+    
+    if os.access(path, os.R_OK) and os.path.isdir (path) and not os.path.islink (path) and file[0] != '.':
+      logging.log(logging.DEBUG, "Entering directory " + path)
+      parsedirs (path, postfix, depth-1)
+
         #Parse DSA data files
-		if os.access(path, os.R_OK) and file.endswith(postfix) and file[0] != '.' and file[0] != '#':
-			result = dsa.parseFile (path)
-			if result:
+    if os.access(path, os.R_OK) and file.endswith(postfix) and file[0] != '.' and file[0] != '#':
+      result = dsa.parseFile (path)
+      if result:
 				if dsaref.has_key (result[0]):
-					for (k, v) in result[1].iteritems():
+          for (k, v) in result[1].iteritems():
 						dsaref[result[0]][k] = v
-				else:
+        else:
 					dsaref[result[0]] = result[1]
-		
+
         #Parse DSA wml descriptions
 		if os.access(path, os.R_OK) and file.endswith(".wml") and file[0] != '.' and file[0] != '#':
 			result = wml.parseFile(path)
@@ -73,8 +73,8 @@ def parsedirs (directory, postfix, depth):
 						dsaref[result[0]][k] = v
 				else:
 					dsaref[result[0]] = result[1]
-									
-	return 0
+
+  return 0
 
 if __name__ == "__main__":
     
