@@ -10,7 +10,7 @@ PYTHON=/usr/bin/python
 include $(WMLBASE)/Make.lang
 
 # NOTE: CUR_YEAR is defined in $(WMLBASE)/Makefile.common
-XMLFILES=$(shell for year in `seq 2001 $(CUR_YEAR)`; do echo oval-definitions-$$year.xml; done)
+XMLFILES=$(shell for year in `seq 1997 $(CUR_YEAR)`; do echo oval-definitions-$$year.xml; done)
 
 XMLDESTFILES=$(patsubst %,$(HTMLDIR)/%,$(XMLFILES))
 
@@ -18,12 +18,7 @@ all:: check_empty_files $(XMLFILES)
 
 install:: $(XMLDESTFILES)
 
-oval-definitions-%.xml: generate.py \
-	$(wildcard oval/*/*.py) \
-	$(wildcard $(ENGLISHDIR)/security/%/dsa-*.wml)  \
-	$(wildcard $(ENGLISHDIR)/security/%/dla-*.wml)  \
-	$(wildcard $(ENGLISHDIR)/security/%/dsa-*.data) \
-	$(wildcard $(ENGLISHDIR)/security/%/dla-*.data)
+oval-definitions-%.xml: force
 	@[ -e $(PYTHON) ] || { echo "ERROR: Required python binary $(PYTHON) is not available, aborting generation" >&2; exit 1; }
 	-$(PYTHON) generate.py -d .. -y $(patsubst oval-definitions-%.xml,%,$@) >$@
 # Warn if empty files are generated
@@ -50,4 +45,5 @@ check_empty_files:
 		fi \
 	done
 
-.PHONY : check_empty_files
+force:
+.PHONY : check_empty_files force
