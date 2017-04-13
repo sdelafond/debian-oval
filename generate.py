@@ -23,9 +23,9 @@ from oval.parser import wml
 ovals = {}
 
 # TODO: these may need changed or reworked.
-DEBIAN_VERSION = {"wheezy" : "7.0", "jessie" : "8.2", "stretch" : "9.0",
-                  "sid" : "9.0", "etch" : "4.0", "squeeze":"6.0", "lenny":"5.0",
-                  "woody" : "3.0", "potato" : "2.2", "sarge" : "3.1"}
+DEBIAN_VERSION = {"wheezy" : "7", "jessie" : "8", "stretch" : "9",
+                  "sid" : "9", "etch" : "4", "squeeze":"6", "lenny":"5",
+                  "woody" : "3", "potato" : "2", "sarge" : "3"}
 
 def usage (prog = "parse-wml-oval.py"):
     """Print information about script flags and options"""
