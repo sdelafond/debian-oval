@@ -73,9 +73,9 @@ def parseFile (path, debianVersion):
       if result:
         deb_version = result.groups()[0].lower()
 
-      new_version_pattern = re.compile(r'version (.+?)\.(</p>|\s)')
+      new_version_pattern = re.compile(r'version ([a-zA-Z0-9.+\-:~]+?)\.?(</p>|\s)')
       result = new_version_pattern.search(line)
-      if result and deb_version != "":
+      if result and deb_version != "" and not debianVersion[deb_version] in releases:
         pack_ver = result.groups()[0]
         releases.update({debianVersion[deb_version]: {u"all": {grabPackName(path) : pack_ver}}})
 
