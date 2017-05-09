@@ -249,7 +249,7 @@ def __createTest(testType, value):
     ref = __getNewId("test")
     
     if testType == "release":
-      objectId = __createOVALTextfilecontentObject ("(\d)\.\d")
+      objectId = __createOVALTextfilecontentObject ("(\d+)\.\d")
       comment = "Debian GNU/Linux %s is installed" % value
       
       test = __createXMLElement("textfilecontent_test", 
