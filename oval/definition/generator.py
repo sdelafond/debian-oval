@@ -214,7 +214,7 @@ def __createOVALTextfilecontentState (value, operation = "equals"):
       attrs={"id":stateId, 
         "version":"1",
         "xmlns":"http://oval.mitre.org/XMLSchema/oval-definitions-5#independent"})
-    state.appendChild ( __createXMLElement ("line", value, 
+    state.appendChild ( __createXMLElement ("subexpression", value,
                     {"operation":operation}))
     states.appendChild (state)
   
@@ -249,7 +249,7 @@ def __createTest(testType, value):
     ref = __getNewId("test")
     
     if testType == "release":
-      objectId = __createOVALTextfilecontentObject ("\d\.\d")
+      objectId = __createOVALTextfilecontentObject ("(\d)\.\d")
       comment = "Debian GNU/Linux %s is installed" % value
       
       test = __createXMLElement("textfilecontent_test", 
