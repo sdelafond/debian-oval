@@ -18,9 +18,21 @@ all:: check_empty_files $(XMLFILES)
 
 install:: $(XMLDESTFILES)
 
-oval-definitions-%.xml: force
+# JSON file to download with security tracker information
+# This is a phony target, it will download it only if the file does not
+# exist or if it is less than 1 hour old. 
+#
+# Note: This is defined this way to prevent a 'make' build in an empty
+# location from downloading the 20MB+ file $(CUR_YEAR)-1997+1 times!
+#
+DebianSecTracker.json:
+	@if ! test -e "$@" || test `find "$@" -mmin +60` ; then \
+	 wget https://security-tracker.debian.org/tracker/data/json -O $@ ;\
+	fi
+
+oval-definitions-%.xml: force DebianSecTracker.json
 	@[ -e $(PYTHON) ] || { echo "ERROR: Required python binary $(PYTHON) is not available, aborting generation" >&2; exit 1; }
-	-$(PYTHON) generate.py -d .. -y $(patsubst oval-definitions-%.xml,%,$@) >$@
+	-$(PYTHON) generate.py -d .. -j DebianSecTracker.json -y $(patsubst oval-definitions-%.xml,%,$@) >$@
 # Warn if empty files are generated
 # Note: They cannot be removed or the install target will fail later
 	@[ -s $@ ] || echo "WARNING: OVAL Definition $@ is empty, please review script and/or DSAs" 
@@ -32,7 +44,7 @@ $(XMLDESTFILES): $(HTMLDIR)/%: %
 # TODO 'clean' could also remove the python-compiled files generated
 # by Python when running the script
 clean::
-	  -rm -f oval-definitions-*.xml
+	  -rm -f oval-definitions-*.xml DebianSecTracker.json
 	
 cleandest::
 	  -rm -f $(HTMLDIR)/oval-definitions-*.xml
@@ -46,4 +58,4 @@ check_empty_files:
 	done
 
 force:
-.PHONY : check_empty_files force
+.PHONY : check_empty_files force DebianSecTracker.json
