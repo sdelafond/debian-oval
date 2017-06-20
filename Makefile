@@ -27,7 +27,7 @@ install:: $(XMLDESTFILES)
 #
 DebianSecTracker.json:
 	@if ! test -e "$@" || test `find "$@" -mmin +60` ; then \
-	 wget https://security-tracker.debian.org/tracker/data/json -O $@ ;\
+	 wget https://security-tracker.debian.org/tracker/data/json --ca-directory=/etc/ssl/ca-debian -O $@ ;\
 	fi
 
 oval-definitions-%.xml: force DebianSecTracker.json
