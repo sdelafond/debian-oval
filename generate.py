@@ -22,10 +22,21 @@ from oval.parser import wml
 
 ovals = {}
 
-# TODO: these may need changed or reworked.
-DEBIAN_VERSION = {"wheezy" : "7", "jessie" : "8", "stretch" : "9",
-                  "buster" : "10", "sid" : "10", "etch" : "4", "squeeze" : "6",
-                  "lenny":"5", "woody" : "3", "potato" : "2", "sarge" : "3"}
+# TODO: 
+# - these may need changed or reworked.
+# - ideally this would d be extracted from the release information @ website
+DEBIAN_VERSION = { 
+    "potato" : "2" ,
+    "sarge"  : "3" ,
+    "woody"  : "3" , 
+    "etch"   : "4" , 
+    "lenny"  : "5" , 
+    "squeeze": "6" ,
+    "wheezy" : "7" ,
+    "jessie" : "8" , 
+    "stretch": "9" ,
+    "buster" : "10", 
+    "sid" : "10" }
 
 def usage (prog = "parse-wml-oval.py"):
     """Print information about script flags and options"""
