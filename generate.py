@@ -45,6 +45,7 @@ def parsedirs (directory, regex, depth, debian_release):
   """
 
   global ovals
+  debian_version = DEBIAN_VERSION[debian_release]
 
   if depth == 0:
     logging.log(logging.DEBUG, "Maximum depth reached at directory " + directory)
@@ -78,7 +79,7 @@ def parsedirs (directory, regex, depth, debian_release):
         if wmlResult:
           data, releases = wmlResult
         # skip if the wml file does not contain the debian release
-          if not DEBIAN_VERSION[debian_release] in releases:
+          if not debian_version in releases:
               continue
           for (k, v) in data.iteritems():
             if k == "moreinfo":
@@ -93,7 +94,7 @@ def parsedirs (directory, regex, depth, debian_release):
               ovals[cve][k] = v
           if not "release" in ovals[cve]:
             ovals[cve]["release"] = {}
-          ovals[cve]['release'].update(releases)
+          ovals[cve]['release'].update({debian_version: releases[debian_version]})
 
   return 0
 
@@ -121,11 +122,10 @@ def parseJSON(json_data, debian_release):
                 else:
                     fixed_v = json_data[package][cve]['releases'][rel]['fixed_version']
                     f_str = 'yes'
-                release.update({DEBIAN_VERSION[rel]: {u'all': {
-                    package: fixed_v}}})
+                if debian_release == rel:
+                    release.update({DEBIAN_VERSION[rel]: {u'all': {
+                        package: fixed_v}}})
 
-                # print json.dumps(json_data[package][cve])
-                # sys.exit(1)
                 # filter for release which the OVAL should be generated for
                 if debian_release == rel:
                     ovals.update({cve: {"packages": package,
