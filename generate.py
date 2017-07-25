@@ -43,20 +43,20 @@ def usage (prog = "parse-wml-oval.py"):
 
     print """usage: %s [vh] [-d <directory>]\t-d\twhich directory use for
     dsa definition search\t-v\tverbose mode\t-h\tthis help""" % prog
-
-def printdsas(ovals, year):
+def printdsas(ovals):
     """ Generate and print OVAL Definitions for collected DSA information """
 
-    ovalDefinitions = oval.definition.generator.createOVALDefinitions (ovals, year)
+    ovalDefinitions = oval.definition.generator.createOVALDefinitions (ovals)
     oval.definition.generator.printOVALDefinitions (ovalDefinitions)
 
-def parsedirs (directory, regex, depth):
+def parsedirs (directory, regex, depth, debian_release):
   """ Recursive search directory for DSA files contain postfix in their names.
 
     For this files called oval.parser.dsa.parseFile() for extracting DSA information.
   """
 
   global ovals
+  debian_version = DEBIAN_VERSION[debian_release]
 
   if depth == 0:
     logging.log(logging.DEBUG, "Maximum depth reached at directory " + directory)
@@ -70,7 +70,7 @@ def parsedirs (directory, regex, depth):
     
     if os.access(path, os.R_OK) and os.path.isdir (path) and not os.path.islink (path) and fileName[0] != '.':
       logging.log(logging.DEBUG, "Entering directory " + path)
-      parsedirs (path, regex, depth-1)
+      parsedirs (path, regex, depth-1, debian_release)
 
     #Parse fileNames
     if os.access(path, os.R_OK) and regex.search(fileName) and fileName[0] != '.' and fileName[0] != '#':
@@ -89,6 +89,9 @@ def parsedirs (directory, regex, depth):
         wmlResult = wml.parseFile(path.replace('.data', '.wml'), DEBIAN_VERSION)
         if wmlResult:
           data, releases = wmlResult
+        # skip if the wml file does not contain the debian release
+          if not debian_version in releases:
+              continue
           for (k, v) in data.iteritems():
             if k == "moreinfo":
               if not "moreinfo" in ovals[cve]:
@@ -102,11 +105,12 @@ def parsedirs (directory, regex, depth):
               ovals[cve][k] = v
           if not "release" in ovals[cve]:
             ovals[cve]["release"] = {}
-          ovals[cve]['release'].update(releases)
+          ovals[cve]['release'].update({debian_version: releases[debian_version]})
 
   return 0
 
-def parseJSON(json_data, year):
+
+def parseJSON(json_data, debian_release):
     """
     Parse the JSON data and extract information needed for OVAL definitions
     :param json_data: Json_Data
@@ -129,20 +133,22 @@ def parseJSON(json_data, year):
                 else:
                     fixed_v = json_data[package][cve]['releases'][rel]['fixed_version']
                     f_str = 'yes'
-                release.update({DEBIAN_VERSION[rel]: {u'all': {
-                    package: fixed_v}}})
+                if debian_release == rel:
+                    release.update({DEBIAN_VERSION[rel]: {u'all': {
+                        package: fixed_v}}})
 
-                # print json.dumps(json_data[package][cve])
-                # sys.exit(1)
-                ovals.update({cve: {"packages": package,
+                # filter for release which the OVAL should be generated for
+                if debian_release == rel:
+                    ovals.update({cve: {"packages": package,
                                         'title': cve,
                                         'vulnerable': "yes",
                                         'date': str(today.isoformat()),
-                                        'fixed': f_str, 
-                                        'description': json_data[package][cve].get("description",""),
+                                        'fixed': f_str,
+                                        'description': json_data[package][cve].get("description", ""),
                                         'secrefs': cve,
                                         'release': release}})
-                logging.log(logging.DEBUG, "Created entry for %s" % cve)
+                    logging.log(logging.DEBUG, "Created entry for %s" % cve)
+
 
 def get_json_data(json_file):
     """
@@ -173,7 +179,7 @@ def main(args):
     json_file = args['JSONfile']
     data_dir = args['data_directory']
     temp_file = args['tmp']
-    year = args['year']
+    release = args['release']
 
     if json_file:
         json_data = get_json_data(json_file)
@@ -194,11 +200,11 @@ def main(args):
             logging.log(logging.DEBUG, "Removing file %s" % temp_file)
             os.remove(temp_file)
 
-    parseJSON(json_data, year)
-    parsedirs(data_dir, re.compile('^dsa.+\.data$'), 2)
-    parsedirs(data_dir, re.compile('^dla.+\.data$'), 2)
+    parseJSON(json_data, release)
+    parsedirs(data_dir, re.compile('^dsa.+\.data$'), 2, release)
+    parsedirs(data_dir, re.compile('^dla.+\.data$'), 2, release)
     logging.log(logging.INFO, "Finished parsing JSON data")
-    printdsas(ovals, year)
+    printdsas(ovals)
 
 if __name__ == "__main__":
     PARSER = argparse.ArgumentParser(description='Generates oval definitions '
@@ -219,8 +225,8 @@ if __name__ == "__main__":
                              ' if this file already exists it will be removed '
                              'prior to downloading the JSON file. default= '
                              './DebSecTrackTMP.t', default='./DebSecTrackTMP.t')
-    PARSER.add_argument('-y', '--year', type=str,
-                        help='Limit to this year. default= ' '2016', default='2016')
+    PARSER.add_argument('-r', '--release', type=str,
+                        help='Limit to this release. default= jessie', default='jessie')
     PARSER.add_argument('-i', '--id', type=int,
                         help='id number to start defintions at. default=100',
                         default=100)

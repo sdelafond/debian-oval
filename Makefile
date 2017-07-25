@@ -9,8 +9,7 @@ PYTHON=/usr/bin/python
 
 include $(WMLBASE)/Make.lang
 
-# NOTE: CUR_YEAR is defined in $(WMLBASE)/Makefile.common
-XMLFILES=$(shell for year in `seq 1997 $(CUR_YEAR)`; do echo oval-definitions-$$year.xml; done)
+XMLFILES=$(shell for release in wheezy jessie stretch buster; do echo oval-definitions-$$release.xml; done)
 
 XMLDESTFILES=$(patsubst %,$(HTMLDIR)/%,$(XMLFILES))
 
@@ -32,7 +31,7 @@ DebianSecTracker.json:
 
 oval-definitions-%.xml: force DebianSecTracker.json
 	@[ -e $(PYTHON) ] || { echo "ERROR: Required python binary $(PYTHON) is not available, aborting generation" >&2; exit 1; }
-	-$(PYTHON) generate.py -d .. -j DebianSecTracker.json -y $(patsubst oval-definitions-%.xml,%,$@) >$@
+	-$(PYTHON) generate.py -d .. -j DebianSecTracker.json -r $(patsubst oval-definitions-%.xml,%,$@) >$@
 # Warn if empty files are generated
 # Note: They cannot be removed or the install target will fail later
 	@[ -s $@ ] || echo "WARNING: OVAL Definition $@ is empty, please review script and/or DSAs" 

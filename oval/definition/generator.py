@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# oval.definition.generator - generate well-formed xml file with 
+# oval.definition.generator - generate well-formed xml file with
 # OVAL definitions of Debian Security Advisories.
 # Use various optimizations to minimize result XML
 #
@@ -12,14 +12,22 @@
 import re
 import logging
 import datetime
-#import xml.dom.ext
-import xml.dom.minidom
+from lxml import etree
 from oval.definition.differ import differ
 import re
 
 # from http://boodebr.org/main/python/all-about-python-and-unicode#UNI_XML
 RE_XML_ILLEGAL = u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])' + u'|' + u'([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % (unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff), unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff), unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff)) 
 regex = re.compile(RE_XML_ILLEGAL)
+nsmap = {
+    None       : "http://oval.mitre.org/XMLSchema/oval-definitions-5",
+    "ind-def"  : "http://oval.mitre.org/XMLSchema/oval-definitions-5#independent",
+    "linux-def": "http://oval.mitre.org/XMLSchema/oval-definitions-5#linux",
+    "oval"     : "http://oval.mitre.org/XMLSchema/oval-common-5",
+    "oval-def" : "http://oval.mitre.org/XMLSchema/oval-definitions-5",
+    "unix-def" : "http://oval.mitre.org/XMLSchema/oval-definitions-5#unix",
+    "xsi"      : "http://www.w3.org/2001/XMLSchema-instance",
+}
 
           
 class OvalGeneratorException (Exception):
@@ -28,7 +36,7 @@ class OvalGeneratorException (Exception):
 class CVEFormatException (OvalGeneratorException):
   code = 1
   
-def __createXMLElement (name, descr = None, attrs = {}):
+def __createXMLElement (name, descr = None, attrs = {}, nsmap = {}):
   """
     Create XML element with text descr and attributes attrs
     
@@ -40,24 +48,13 @@ def __createXMLElement (name, descr = None, attrs = {}):
     Return created XML element
   """
 
-  doc = xml.dom.minidom.Document ()
-  element = doc.createElement (name)
-  
-  for (attr, value) in attrs.items():
-    for match in regex.finditer(attr):
-      attr = attr[:match.start()] + "?" + attr[match.end():]
-    for match in regex.finditer(value):
-      value = value[:match.start()] + "?" + value[match.end():]
-    attribute = doc.createAttribute (attr.encode("utf8"))
-    attribute.value = value.encode("utf8")
-    element.attributes.setNamedItem (attribute)
+  element = etree.Element(name, attrs, nsmap=nsmap)
   
   if descr != None:
-   for match in regex.finditer(descr):
-     descr = descr[:match.start()] + "?" + descr[match.end():]
-   description = doc.createTextNode (descr.encode("utf8"))
-   element.appendChild (description)
-  
+    for match in regex.finditer(descr):
+      descr = descr[:match.start()] + "?" + descr[match.end():]
+    element.text= descr
+
   return (element)
 
 namespace = "oval:org.debian.oval"
@@ -110,8 +107,8 @@ def __createOVALDpkginfoObject (name):
       attrs={"id":objectId, 
         "version":"1",
         "xmlns":"http://oval.mitre.org/XMLSchema/oval-definitions-5#linux"})
-    object.appendChild ( __createXMLElement ("name", name))
-    objects.appendChild (object)
+    object.append ( __createXMLElement ("name", name))
+    objects.append (object)
 
     testsHash["obj"][name] = objectId
   
@@ -127,10 +124,10 @@ def __createOVALTextfilecontentObject (pattern, path = "/etc", filename = "debia
       attrs={"id":objectId, 
         "version":"1",
         "xmlns":"http://oval.mitre.org/XMLSchema/oval-definitions-5#independent"})
-    object.appendChild ( __createXMLElement ("path", path))
-    object.appendChild ( __createXMLElement ("filename", filename))
-    object.appendChild ( __createXMLElement ("line", pattern, attrs={"operation" : "pattern match"}))
-    objects.appendChild (object)
+    object.append ( __createXMLElement ("path", path))
+    object.append ( __createXMLElement ("filename", filename))
+    object.append ( __createXMLElement ("line", pattern, attrs={"operation" : "pattern match"}))
+    objects.append (object)
 
     testsHash["obj"][name] = objectId
   
@@ -146,7 +143,7 @@ def __createOVALUnameObject ():
       attrs={"id":objectId, 
         "version":"1",
         "xmlns":"http://oval.mitre.org/XMLSchema/oval-definitions-5#unix"})
-    objects.appendChild (object)
+    objects.append (object)
 
     testsHash["obj"][name] = objectId
   
@@ -165,10 +162,10 @@ def __createOVALState (value, operation = "less than"):
       attrs={"id":stateId, 
         "version":"1",
         "xmlns":"http://oval.mitre.org/XMLSchema/oval-definitions-5#linux"})
-    state.appendChild ( __createXMLElement ("evr", "0:"+value, 
+    state.append ( __createXMLElement ("evr", "0:"+value,
                     {"datatype":"evr_string", 
                      "operation":operation}))
-    states.appendChild (state)
+    states.append (state)
   
     testsHash["dpkgSte"][operation] = {value : stateId}
     
@@ -193,9 +190,9 @@ def __createOVALUnameState (field, value, operation = "equals"):
       attrs={"id":stateId, 
         "version":"1",
         "xmlns":"http://oval.mitre.org/XMLSchema/oval-definitions-5#unix"})
-    state.appendChild ( __createXMLElement (field, value, 
+    state.append ( __createXMLElement (field, value,
                     {"operation":operation}))
-    states.appendChild (state)
+    states.append (state)
   
     testsHash["unameSte"][operation] = {value : stateId}
     
@@ -214,9 +211,9 @@ def __createOVALTextfilecontentState (value, operation = "equals"):
       attrs={"id":stateId, 
         "version":"1",
         "xmlns":"http://oval.mitre.org/XMLSchema/oval-definitions-5#independent"})
-    state.appendChild ( __createXMLElement ("subexpression", value,
+    state.append ( __createXMLElement ("subexpression", value,
                     {"operation":operation}))
-    states.appendChild (state)
+    states.append (state)
   
     testsHash["fileSte"][operation] = {value : stateId}
     
@@ -234,9 +231,9 @@ def __createDPKGTest(name, version):
         "comment":"%s is earlier than %s" % (name, version),
         "xmlns":"http://oval.mitre.org/XMLSchema/oval-definitions-5#linux"
       })
-  test.appendChild ( __createXMLElement("object", attrs={"object_ref" : __createOVALDpkginfoObject (name)}))
-  test.appendChild ( __createXMLElement("state", attrs={"state_ref" : __createOVALState (version)}))
-  tests.appendChild(test)
+  test.append ( __createXMLElement("object", attrs={"object_ref" : __createOVALDpkginfoObject (name)}))
+  test.append ( __createXMLElement("state", attrs={"state_ref" : __createOVALState (version)}))
+  tests.append(test)
 
   return (ref)
   
@@ -260,8 +257,8 @@ def __createTest(testType, value):
           "comment":comment,
           "xmlns":"http://oval.mitre.org/XMLSchema/oval-definitions-5#independent"
       })
-      test.appendChild ( __createXMLElement("object", attrs={"object_ref" : objectId}))
-      test.appendChild ( __createXMLElement("state", attrs={"state_ref" : __createOVALTextfilecontentState (value, "equals")}))
+      test.append ( __createXMLElement("object", attrs={"object_ref" : objectId}))
+      test.append ( __createXMLElement("state", attrs={"state_ref" : __createOVALTextfilecontentState (value, "equals")}))
       
     else:
       objectId = __createOVALUnameObject ()
@@ -275,11 +272,11 @@ def __createTest(testType, value):
           "comment":comment,
           "xmlns":"http://oval.mitre.org/XMLSchema/oval-definitions-5#unix"
       })
-      test.appendChild ( __createXMLElement("object", attrs={"object_ref" : objectId}))
+      test.append ( __createXMLElement("object", attrs={"object_ref" : objectId}))
       if value != "all":
-        test.appendChild ( __createXMLElement("state", attrs={"state_ref" : __createOVALUnameState ("processor_type", value, "equals")}))
+        test.append ( __createXMLElement("state", attrs={"state_ref" : __createOVALUnameState ("processor_type", value, "equals")}))
     
-    tests.appendChild(test)
+    tests.append(test)
         
     testsHash[testType][value] = ref
   
@@ -292,12 +289,11 @@ def __createGeneratorHeader ():
     return  xml.dom.minidom.Document with header information
   """
   
-  doc = xml.dom.minidom.Document ()
-  generator = doc.createElement ("generator")
+  generator = etree.Element ("generator")
 
-  generator.appendChild ( __createXMLElement ("oval:product_name", "Debian") )
-  generator.appendChild ( __createXMLElement ("oval:schema_version", "5.3") )
-  generator.appendChild ( __createXMLElement ("oval:timestamp", datetime.datetime.now().strftime ("%Y-%m-%dT%H:%M:%S.188-04:00")) )
+  generator.append ( __createXMLElement ("{%s}product_name" % nsmap['oval'], "Debian") )
+  generator.append ( __createXMLElement ("{%s}schema_version" % nsmap['oval'], "5.3") )
+  generator.append ( __createXMLElement ("{%s}timestamp" % nsmap['oval'], datetime.datetime.now().strftime ("%Y-%m-%dT%H:%M:%S.188-04:00")) )
 
   return (generator)
 
@@ -320,7 +316,7 @@ def createPlatformDefinition (release, data, cve):
     logging.log(logging.WARNING, "CVE %s: Information of affected platforms is not available." % cve)
   
   softwareCriteria = __createXMLElement ("criteria", attrs = {"comment" : "Release section", "operator" : "AND"})
-  softwareCriteria.appendChild ( __createXMLElement ("criterion", attrs={"test_ref" : __createTest("release", release), "comment" : "Debian %s is installed" % release}))
+  softwareCriteria.append ( __createXMLElement ("criterion", attrs={"test_ref" : __createTest("release", release), "comment" : "Debian %s is installed" % release}))
     
   archCriteria = __createXMLElement ("criteria", attrs = {"comment" : "Architecture section", "operator" : "OR"})
 
@@ -328,18 +324,18 @@ def createPlatformDefinition (release, data, cve):
   if data.has_key ("all"):
     archIndepCriteria = __createXMLElement ("criteria", attrs={"comment" : "Architecture independent section", "operator" : "AND"})
     
-    archIndepCriteria.appendChild ( __createXMLElement ("criterion", attrs = {"test_ref" : __createTest("arch", "all"), "comment" : "all architecture"}))
+    archIndepCriteria.append ( __createXMLElement ("criterion", attrs = {"test_ref" : __createTest("arch", "all"), "comment" : "all architecture"}))
     #Build packages section only if we have more then one package
     if len (data["all"]) > 1:
       packageCriteria = __createXMLElement ("criteria", attrs={"comment" : "Packages section", "operator" : "OR"})
-      archIndepCriteria.appendChild (packageCriteria)
+      archIndepCriteria.append (packageCriteria)
     else:
       packageCriteria = archIndepCriteria
       
     for pkg in data["all"].keys():
-      packageCriteria.appendChild ( __createXMLElement ("criterion", attrs = {"test_ref" : __createDPKGTest(pkg, data["all"][pkg]), "comment" : "%s DPKG is earlier than %s" % (pkg, data["all"][pkg])}))
+      packageCriteria.append ( __createXMLElement ("criterion", attrs = {"test_ref" : __createDPKGTest(pkg, data["all"][pkg]), "comment" : "%s DPKG is earlier than %s" % (pkg, data["all"][pkg])}))
   
-    archCriteria.appendChild (archIndepCriteria)
+    archCriteria.append (archIndepCriteria)
 
   # Optimize packages tree in 2 stages
   diff = differ ()
@@ -361,22 +357,22 @@ def createPlatformDefinition (release, data, cve):
     # Generate XML for optimized packages
     if (len(eq)):
       if len(diff.getArchs()) != releaseArchHash[release]:
-        archDependCriteria = __createXMLElement ("criteria", attrs={"comment" : "Architecture depended section", "operator" : "AND"})  
+        archDependCriteria = __createXMLElement ("criteria", attrs={"comment" : "Architecture depended section", "operator" : "AND"})
         
         supportedArchCriteria = __createXMLElement ("criteria", attrs={"comment" : "Supported architectures section", "operator" : "OR"})
         for arch in diff.getArchs():
-          supportedArchCriteria.appendChild ( __createXMLElement ("criterion", attrs = {"test_ref" : __createTest("arch", arch), "comment" : "%s architecture" % arch}))
-          archDependCriteria.appendChild (supportedArchCriteria)
+          supportedArchCriteria.append ( __createXMLElement ("criterion", attrs = {"test_ref" : __createTest("arch", arch), "comment" : "%s architecture" % arch}))
+          archDependCriteria.append (supportedArchCriteria)
     
       packageCriteria = __createXMLElement ("criteria", attrs={"comment" : "Packages section", "operator" : "OR"})
       for bpkg in eq.keys():
-        packageCriteria.appendChild ( __createXMLElement ("criterion", attrs = {"test_ref" : __createDPKGTest(bpkg, eq[bpkg]), "comment" : "%s DPKG is earlier than %s" % (bpkg, eq[bpkg])}))
+        packageCriteria.append ( __createXMLElement ("criterion", attrs = {"test_ref" : __createDPKGTest(bpkg, eq[bpkg]), "comment" : "%s DPKG is earlier than %s" % (bpkg, eq[bpkg])}))
       
       if len(diff.getArchs()) != releaseArchHash[release]:      
-        archDependCriteria.appendChild (packageCriteria)
-        archCriteria.appendChild (archDependCriteria)
+        archDependCriteria.append (packageCriteria)
+        archCriteria.append (archDependCriteria)
       else:
-        archCriteria.appendChild (packageCriteria)
+        archCriteria.append (packageCriteria)
     
   # Generate XML for all other packages
   if len(di):
@@ -384,18 +380,18 @@ def createPlatformDefinition (release, data, cve):
       
     for (key, value) in di.iteritems():
       supportedPlatformCriteria = __createXMLElement ("criteria", attrs={"comment" : "Supported platform section", "operator" : "AND"})
-      supportedPlatformCriteria.appendChild ( __createXMLElement ("criterion", attrs = {"test_ref" : __createTest("arch", key), "comment" : "%s architecture" % key}))
+      supportedPlatformCriteria.append ( __createXMLElement ("criterion", attrs = {"test_ref" : __createTest("arch", key), "comment" : "%s architecture" % key}))
     
       packageCriteria = __createXMLElement ("criteria", attrs={"comment" : "Packages section", "operator" : "OR"})
           
       for bpkg in di[key].keys():
-        packageCriteria.appendChild ( __createXMLElement ("criterion", attrs = {"test_ref" : __createDPKGTest(bpkg, di[key][bpkg]), "comment" : "%s DPKG is earlier than %s" % (bpkg, di[key][bpkg])}))
-        supportedPlatformCriteria.appendChild (packageCriteria)
+        packageCriteria.append ( __createXMLElement ("criterion", attrs = {"test_ref" : __createDPKGTest(bpkg, di[key][bpkg]), "comment" : "%s DPKG is earlier than %s" % (bpkg, di[key][bpkg])}))
+        supportedPlatformCriteria.append (packageCriteria)
     
-    archDependCriteria.appendChild (supportedPlatformCriteria)
-    archCriteria.appendChild (archDependCriteria)  
+    archDependCriteria.append (supportedPlatformCriteria)
+    archCriteria.append (archDependCriteria)
        
-  softwareCriteria.appendChild (archCriteria)  
+  softwareCriteria.append (archCriteria)
   
   return (softwareCriteria)
 
@@ -440,15 +436,15 @@ def createDefinition (cve, oval):
 
   ### Definition : Metadata : title, affected, reference, description ###
   metadata = __createXMLElement ("metadata")
-  metadata.appendChild (__createXMLElement ("title", oval["title"]))
+  metadata.append (__createXMLElement ("title", oval["title"]))
 
   ### Definition : Metadata : Affected : platform, product ###
   affected = __createXMLElement ("affected", attrs = {"family" : "unix"})
   for platform in oval["release"]:
-    affected.appendChild ( __createXMLElement ("platform", "Debian GNU/Linux %s" % platform))
-  affected.appendChild ( __createXMLElement ("product", oval.get("packages")))
+    affected.append ( __createXMLElement ("platform", "Debian GNU/Linux %s" % platform))
+  affected.append ( __createXMLElement ("product", oval.get("packages")))
     
-  metadata.appendChild (affected)
+  metadata.append (affected)
   ### Definition : Metadata : Affected : END ###
 
   refpatern = re.compile (r'((CVE|CAN)-[\d-]+)')
@@ -456,34 +452,34 @@ def createDefinition (cve, oval):
     result = refpatern.search(ref)
     if result:
       (ref_id, source) = result.groups()
-      metadata.appendChild ( __createXMLElement ("reference", attrs = {"source" : source, "ref_id" : ref_id, "ref_url" : "http://cve.mitre.org/cgi-bin/cvename.cgi?name=%s" % ref_id}) )
+      metadata.append ( __createXMLElement ("reference", attrs = {"source" : source, "ref_id" : ref_id, "ref_url" : "http://cve.mitre.org/cgi-bin/cvename.cgi?name=%s" % ref_id}) )
   
   #TODO: move this info to other place
-  metadata.appendChild ( __createXMLElement ("description", oval["description"]))
+  metadata.append ( __createXMLElement ("description", oval["description"]))
   debianMetadata = __createXMLElement ("debian")
   if oval.has_key("date"):
-    debianMetadata.appendChild ( __createXMLElement ("date", oval["date"]) )
-  debianMetadata.appendChild ( __createXMLElement ("moreinfo", oval["moreinfo"]))
-  metadata.appendChild (debianMetadata)
-  definition.appendChild ( metadata )
+    debianMetadata.append ( __createXMLElement ("date", oval["date"]) )
+  debianMetadata.append ( __createXMLElement ("moreinfo", oval["moreinfo"]))
+  metadata.append (debianMetadata)
+  definition.append ( metadata )
 
   ### Definition : Criteria ###
   if len(oval["release"]) > 1:
     #f we have more than one release - generate additional criteria section
     platformCriteria = __createXMLElement ("criteria", attrs = {"comment" : "Platform section", "operator" : "OR"})
-    definition.appendChild (platformCriteria)
+    definition.append (platformCriteria)
   else:
     platformCriteria = definition
   
   for platform in oval["release"]:
     data = oval["release"][platform]
-    platformCriteria.appendChild (createPlatformDefinition(platform, data, cve))
+    platformCriteria.append (createPlatformDefinition(platform, data, cve))
     
   ### Definition : Criteria END ###
 
   return (definition)
 
-def createOVALDefinitions (ovals, year):
+def createOVALDefinitions (ovals):
   """ Generate XML OVAL definition tree for range of CVE
   
     Generate namespace section and use other functions to generate definitions,
@@ -491,43 +487,32 @@ def createOVALDefinitions (ovals, year):
     
     return -- Generated OVAL XML definition 
   """
-  doc = xml.dom.minidom.Document ()
-
   root = __createXMLElement ("oval_definitions", 
       attrs= {
-        "xsi:schemaLocation" : "http://oval.mitre.org/XMLSchema/oval-definitions-5#independent independent-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#linux linux-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#unix unix-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5 oval-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-common-5 oval-common-schema.xsd",
-        "xmlns:xsi"     : "http://www.w3.org/2001/XMLSchema-instance",
-        "xmlns:ind-def "   : "http://oval.mitre.org/XMLSchema/oval-definitions-5#independent",
-        "xmlns:linux-def" : "http://oval.mitre.org/XMLSchema/oval-definitions-5#linux",
-        "xmlns:oval-def" : "http://oval.mitre.org/XMLSchema/oval-definitions-5",
-        "xmlns:unix-def" : "http://oval.mitre.org/XMLSchema/oval-definitions-5#unix",
-        "xmlns"         : "http://oval.mitre.org/XMLSchema/oval-definitions-5",
-        "xmlns:oval"     : "http://oval.mitre.org/XMLSchema/oval-common-5"
-      }
+          "{%s}schemaLocation"% nsmap['xsi'] : "http://oval.mitre.org/XMLSchema/oval-definitions-5#independent independent-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#linux linux-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#unix unix-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5 oval-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-common-5 oval-common-schema.xsd",
+      }, nsmap=nsmap
       )
-  doc.appendChild (root)
-  root.appendChild ( __createGeneratorHeader () )
+  root.append ( __createGeneratorHeader () )
   
-  definitions = doc.createElement ("definitions")
+  definitions = etree.SubElement (root, "definitions")
   
   keyids = ovals.keys()
   keyids.sort()
   for cve in keyids:
     try:
-      if cve.find("CVE-%s" % year) < 0:
+      # filter for CVEs
+      if cve.find("CVE-") < 0:
         continue
-      definitions.appendChild (createDefinition(cve, ovals[cve]))
+      definitions.append(createDefinition(cve, ovals[cve]))
     except CVEFormatException:
       logging.log (logging.WARNING, "CVE %s: Bad data file. Ignoring this CVE." % cve)
       
-  root.appendChild (definitions)
-  
-  root.appendChild(tests)
-  root.appendChild(objects)
-  root.appendChild(states)
+  root.append(tests)
+  root.append(objects)
+  root.append(states)
 
-  return doc
+  return root
 
-def printOVALDefinitions (doc):
-  if doc.getElementsByTagName("definitions")[0].hasChildNodes():
-    print doc.toprettyxml()
+def printOVALDefinitions (root):
+  if len(root.find("definitions")):
+    print etree.tostring(root, encoding='utf-8', pretty_print=True, xml_declaration=True)
