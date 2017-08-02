@@ -16,7 +16,7 @@ XMLDESTFILES=$(patsubst %,$(HTMLDIR)/%,$(XMLFILES))
 all:: check_empty_files $(XMLFILES)
 
 install:: $(XMLDESTFILES)
-
+	-rm oval-definitions-1*.xml oval-definitions-2*.xml
 # JSON file to download with security tracker information
 # This is a phony target, it will download it only if the file does not
 # exist or if it is less than 1 hour old. 
