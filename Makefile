@@ -38,7 +38,6 @@ oval-definitions-%.xml: force DebianSecTracker.json
 $(XMLDESTFILES): $(HTMLDIR)/%: %
 	@test -d $(HTMLDIR) || mkdir -m g+w -p $(HTMLDIR)
 	install -m 664 -p $< $(HTMLDIR)
-	-rm $(HTMLDIR)/oval-definitions-1*.xml $(HTMLDIR)/oval-definitions-2*.xml
 
 # TODO 'clean' could also remove the python-compiled files generated
 # by Python when running the script
