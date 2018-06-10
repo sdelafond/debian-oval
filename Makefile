@@ -30,7 +30,7 @@ DebianSecTracker.json:
 
 oval-definitions-%.xml: force DebianSecTracker.json
 	@[ -e $(PYTHON) ] || { echo "ERROR: Required python binary $(PYTHON) is not available, aborting generation" >&2; exit 1; }
-	-$(PYTHON) generate.py -d .. -j DebianSecTracker.json -r $(patsubst oval-definitions-%.xml,%,$@) >$@
+	$(IGNORE)$(PYTHON) generate.py -d .. -j DebianSecTracker.json -r $(patsubst oval-definitions-%.xml,%,$@) >$@
 # Warn if empty files are generated
 # Note: They cannot be removed or the install target will fail later
 	@[ -s $@ ] || echo "WARNING: OVAL Definition $@ is empty, please review script and/or DSAs" 
