@@ -25,12 +25,16 @@ install:: $(XMLDESTFILES)
 #
 DebianSecTracker.json:
 	@if ! test -e "$@" || test `find "$@" -mmin +60` ; then \
-	 wget https://security-tracker.debian.org/tracker/data/json --ca-directory=/etc/ssl/ca-debian -O $@ ;\
+	 if test -d /etc/ssl/ca-debian; then \
+	  wget https://security-tracker.debian.org/tracker/data/json --ca-directory=/etc/ssl/ca-debian -O $@ ;\
+	 else \
+	  wget https://security-tracker.debian.org/tracker/data/json -O $@; \
+	 fi \
 	fi
 
 oval-definitions-%.xml: force DebianSecTracker.json
 	@[ -e $(PYTHON) ] || { echo "ERROR: Required python binary $(PYTHON) is not available, aborting generation" >&2; exit 1; }
-	$(IGNORE)$(PYTHON) generate.py -d .. -j DebianSecTracker.json -r $(patsubst oval-definitions-%.xml,%,$@) >$@
+	$(IGNORE)$(PYTHON) generate.py -q -d .. -j DebianSecTracker.json -r $(patsubst oval-definitions-%.xml,%,$@) >$@
 # Warn if empty files are generated
 # Note: They cannot be removed or the install target will fail later
 	@[ -s $@ ] || echo "WARNING: OVAL Definition $@ is empty, please review script and/or DSAs" 

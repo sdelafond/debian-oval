@@ -172,7 +172,10 @@ def main(args):
     if args['verbose']:
         logging.basicConfig(level=logging.DEBUG)
     else:
-        logging.basicConfig(level=logging.WARNING)
+        if args['quiet']:
+            logging.basicConfig(level=logging.ERROR)
+        else:
+            logging.basicConfig(level=logging.WARNING)
 
     # unpack args
 
@@ -191,8 +194,9 @@ def main(args):
         logging.log(logging.DEBUG, "Issuing wget for JSON file")
         args = ['wget', 'https://security-tracker.debian.org/tracker/data/json',
                 '-O', temp_file]
-        if os.path.isdir('/etc/ssl/ca-debian'):
-            args.insert(1, '--ca-directory=/etc/ssl/ca-debian')
+        if os.path.isdir('/etc/ssl'):
+            if os.path.isdir('/etc/ssl/ca-debian'):
+                args.insert(1, '--ca-directory=/etc/ssl/ca-debian')
         call(args)
         logging.log(logging.DEBUG, "File %s received" % temp_file)
         json_data = get_json_data(temp_file)
@@ -211,6 +215,7 @@ if __name__ == "__main__":
                                                  'from the JSON file used to '
                                                  'build the Debian Security '
                                                  'Tracker.')
+    PARSER.add_argument('-q', '--quiet', help='Quiet mode', action="store_true")
     PARSER.add_argument('-v', '--verbose', help='Verbose Mode',
                         action="store_true")
     PARSER.add_argument('-j', '--JSONfile', type=str,
