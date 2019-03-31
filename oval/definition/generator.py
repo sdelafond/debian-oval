@@ -452,7 +452,7 @@ def createDefinition (cve, oval):
     result = refpatern.search(ref)
     if result:
       (ref_id, source) = result.groups()
-      metadata.append ( __createXMLElement ("reference", attrs = {"source" : source, "ref_id" : ref_id, "ref_url" : "http://cve.mitre.org/cgi-bin/cvename.cgi?name=%s" % ref_id}) )
+      metadata.append ( __createXMLElement ("reference", attrs = {"source" : source, "ref_id" : ref_id, "ref_url" : "https://cve.mitre.org/cgi-bin/cvename.cgi?name=%s" % ref_id}) )
   
   #TODO: move this info to other place
   metadata.append ( __createXMLElement ("description", oval["description"]))
