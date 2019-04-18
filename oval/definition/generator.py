@@ -163,7 +163,7 @@ def __createOVALState (value, operation = "less than"):
         "version":"1",
         "xmlns":"http://oval.mitre.org/XMLSchema/oval-definitions-5#linux"})
     state.append ( __createXMLElement ("evr", "0:"+value,
-                    {"datatype":"evr_string", 
+                    {"datatype":"debian_evr_string", 
                      "operation":operation}))
     states.append (state)
   
@@ -292,7 +292,7 @@ def __createGeneratorHeader ():
   generator = etree.Element ("generator")
 
   generator.append ( __createXMLElement ("{%s}product_name" % nsmap['oval'], "Debian") )
-  generator.append ( __createXMLElement ("{%s}schema_version" % nsmap['oval'], "5.3") )
+  generator.append ( __createXMLElement ("{%s}schema_version" % nsmap['oval'], "5.11.2") )
   generator.append ( __createXMLElement ("{%s}timestamp" % nsmap['oval'], datetime.datetime.now().strftime ("%Y-%m-%dT%H:%M:%S.188-04:00")) )
 
   return (generator)
