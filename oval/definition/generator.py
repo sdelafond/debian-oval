@@ -115,18 +115,19 @@ def __createOVALDpkginfoObject (name):
   return (testsHash["obj"][name])
 
 def __createOVALTextfilecontentObject (pattern, path = "/etc", filename = "debian_version"):
-  """ Generate OVAL textfilecontent_object definition """
+  """ Generate OVAL textfilecontent54_object definition """
   name = path + filename + pattern
   
   if not testsHash["obj"].has_key(name):
     objectId = __getNewId ("object");
-    object = __createXMLElement("textfilecontent_object",
+    object = __createXMLElement("textfilecontent54_object",
       attrs={"id":objectId, 
         "version":"1",
         "xmlns":"http://oval.mitre.org/XMLSchema/oval-definitions-5#independent"})
     object.append ( __createXMLElement ("path", path))
     object.append ( __createXMLElement ("filename", filename))
-    object.append ( __createXMLElement ("line", pattern, attrs={"operation" : "pattern match"}))
+    object.append ( __createXMLElement ("pattern", pattern, attrs={"operation" : "pattern match"}))
+    object.append ( __createXMLElement ("instance", "1", attrs={"datatype" : "int"}))
     objects.append (object)
 
     testsHash["obj"][name] = objectId
@@ -134,7 +135,7 @@ def __createOVALTextfilecontentObject (pattern, path = "/etc", filename = "debia
   return (testsHash["obj"][name])
 
 def __createOVALUnameObject ():
-  """ Generate OVAL textfilecontent_object definition """
+  """ Generate OVAL uname_object definition """
   name = "uname_object"
   
   if not testsHash["obj"].has_key(name):
@@ -207,7 +208,7 @@ def __createOVALTextfilecontentState (value, operation = "equals"):
   if not testsHash["fileSte"].has_key(operation) or not testsHash["fileSte"][operation].has_key(value):
     stateId = __getNewId ("state")
 
-    state = __createXMLElement("textfilecontent_state", 
+    state = __createXMLElement("textfilecontent54_state", 
       attrs={"id":stateId, 
         "version":"1",
         "xmlns":"http://oval.mitre.org/XMLSchema/oval-definitions-5#independent"})
@@ -249,7 +250,7 @@ def __createTest(testType, value):
       objectId = __createOVALTextfilecontentObject ("(\d+)\.\d")
       comment = "Debian GNU/Linux %s is installed" % value
       
-      test = __createXMLElement("textfilecontent_test", 
+      test = __createXMLElement("textfilecontent54_test", 
         attrs={"id":ref, 
           "version":"1", 
           "check":"all",
