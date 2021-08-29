@@ -72,6 +72,8 @@ def parseFile (path, debianVersion):
       result = dversion_pattern.search(line)
       if result:
         deb_version = result.groups()[0].lower()
+      else:
+        deb_version = ""
 
       new_version_pattern = re.compile(r'version ([a-zA-Z0-9.+\-:~]+?)\.?(</p>|\s)')
       result = new_version_pattern.search(line)
