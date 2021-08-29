@@ -9,7 +9,7 @@ PYTHON=/usr/bin/python
 
 include $(WMLBASE)/Make.lang
 
-XMLFILES=$(shell for release in wheezy jessie stretch buster; do echo oval-definitions-$$release.xml; done)
+XMLFILES=$(shell for release in wheezy jessie stretch buster bullseye; do echo oval-definitions-$$release.xml; done)
 
 XMLDESTFILES=$(patsubst %,$(HTMLDIR)/%,$(XMLFILES))
 
