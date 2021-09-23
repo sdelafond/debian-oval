@@ -14,7 +14,6 @@
 
 import re
 import os
-import sys
 import logging
 
 # Format of wml files is:
@@ -27,59 +26,56 @@ def parseFile (path, debianVersion):
   path -- full path to wml file
 	
   return list (dsa id, tags data)"""
-	
+
   data = {}
-  moreinfo = False
-  pack_ver = ""
   deb_version = ""
   releases = {}
-
   dsa = os.path.basename(path)[:-5]
   filename = os.path.basename (path)
 	
   logging.log (logging.DEBUG, "Parsing information for DSA %s from wml file %s" % (dsa, filename))
 	
   try:
-    wmlFile = open(path)
 
+    wmlFile = open(path).read()
+
+    # find and replace \n and \r\n symbols
+    lines = re.sub('(?<![\r\n])(\r?\n|\n?\r)(?![\r\n])', ' ', wmlFile)
+
+    lines = lines.split('\n\n')
     dversion_pattern = re.compile(r'(%s)' % '|'.join(debianVersion.keys()), re.IGNORECASE)
 
-    for line in wmlFile:
-      line= line.decode ("ISO-8859-2")
-      descrpatern = re.compile (r'description>(.*?)</define-tag>')
-      result = descrpatern.search (line)
-      if result:
-        data["description"] = result.groups()[0]
-        continue
-				
-      sinfopatern = re.compile (r'<define-tag moreinfo>(.*?)')
-      result = sinfopatern.search (line)
-      if result:
-        moreinfo = True
-        data["moreinfo"] = result.groups()[0] 
-        continue
-			
-      einfopatern = re.compile (r'</define-tag>')
-      if moreinfo and einfopatern.search (line):
+    for line in lines:
+      line= line.decode("ISO-8859-2")
+
+      # find description part
+      descrpatern = re.compile(r'description>(.*?)</define-tag>')
+      description = descrpatern.search(line)
+      if description:
+        data["description"] = description.groups()[0]
+
+      # find moreinfo part
+      sinfopatern = re.compile(r'<define-tag moreinfo>(.*?)')
+      einfopatern = re.compile(r'</define-tag>')
+      if sinfopatern.search(line) and einfopatern.search(line):
+        data['moreinfo'] = line
         data["moreinfo"] = __parseMoreinfo(data["moreinfo"])
-        moreinfo = False
-        continue
-			
-      if moreinfo:
-        data["moreinfo"] += line
-#        continue
 
-      result = dversion_pattern.search(line)
-      if result:
-        deb_version = result.groups()[0].lower()
+      # find debian version
+      dversion = dversion_pattern.search(line)
+      if dversion:
+        deb_version = dversion.groups()[0].lower()
       else:
-        deb_version = ""
+         deb_version = ""
 
+      # find fixed version
       new_version_pattern = re.compile(r'version ([a-zA-Z0-9.+\-:~]+?)\.?(</p>|\s)')
-      result = new_version_pattern.search(line)
-      if result and deb_version != "" and not debianVersion[deb_version] in releases:
-        pack_ver = result.groups()[0]
-        releases.update({debianVersion[deb_version]: {u"all": {grabPackName(path) : pack_ver}}})
+      version = new_version_pattern.search(line)
+
+      # add fixed version and debian release in releases dict
+      if version and deb_version != "" and not debianVersion[deb_version] in releases:
+        pack_ver = version.groups()[0]
+        releases.update({debianVersion[deb_version]: {u"all": {grabPackName(path): pack_ver}}})
 
   except IOError:
     logging.log (logging.ERROR, "Can't work with file %s" % path)
@@ -115,3 +111,5 @@ def grabPackName(path):
                 return result.groups()[0]
     except IOError:
         logging.log (logging.ERROR, "Can't work with file %s" % path)
+
+

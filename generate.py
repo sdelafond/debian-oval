@@ -50,6 +50,7 @@ def printdsas(ovals):
     ovalDefinitions = oval.definition.generator.createOVALDefinitions (ovals)
     oval.definition.generator.printOVALDefinitions (ovalDefinitions)
 
+
 def parsedirs (directory, regex, depth, debian_release):
   """ Recursive search directory for DSA files contain postfix in their names.
 
@@ -96,9 +97,9 @@ def parsedirs (directory, regex, depth, debian_release):
           for (k, v) in data.iteritems():
             if k == "moreinfo":
               if not "moreinfo" in ovals[cve]:
-                ovals[cve]["moreinfo"] = "\n"
+                ovals[cve]["moreinfo"] = ""
               # aggregate all advisories
-              ovals[cve][k] += "%s%s\n" % (dsaRef, v)
+              ovals[cve][k] += "%s %s\n" % (dsaRef, v)
             elif k in ('description'): # some keys shouldn't be clobbered
               if not k in ovals[cve]:
                 ovals[cve][k] = v
