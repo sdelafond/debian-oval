@@ -37,7 +37,7 @@ DEBIAN_VERSION = {
     "stretch": "9",
     "buster" : "10",
     "bullseye" : "11",
-    "sid" : "11"}
+    "sid" : "1000"}
 
 def usage (prog = "parse-wml-oval.py"):
     """Print information about script flags and options"""
