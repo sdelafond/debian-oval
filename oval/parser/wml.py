@@ -79,6 +79,8 @@ def parseFile (path, debianVersion):
 
   except IOError:
     logging.log (logging.ERROR, "Can't work with file %s" % path)
+
+  logging.debug("... found wml data: %s" % data)
 	
   return data, releases
 
@@ -93,7 +95,7 @@ def __parseMoreinfo (info):
 		if re.match(re.compile("For the .* distribution"), par):
 			break
 		result += "\n" + par
-	
+
 	return result
 
 def grabPackName(path):

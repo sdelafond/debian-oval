@@ -68,7 +68,7 @@ def parsedirs (directory, regex, depth, debian_release):
     
     path = "%s/%s" % (directory, fileName)
     
-    logging.log (logging.DEBUG, "Checking %s (for %s at %s)" % (fileName, regex, depth))
+    logging.log (logging.DEBUG, "Checking %s (for %s at %s)" % (fileName, regex.pattern, depth))
     
     if os.access(path, os.R_OK) and os.path.isdir (path) and not os.path.islink (path) and fileName[0] != '.':
       logging.log(logging.DEBUG, "Entering directory " + path)
@@ -77,37 +77,43 @@ def parsedirs (directory, regex, depth, debian_release):
     #Parse fileNames
     if os.access(path, os.R_OK) and regex.search(fileName) and fileName[0] != '.' and fileName[0] != '#':
       result = dsa.parseFile(path)
-      if result:
-        cve = result[0]
-        if ovals.has_key(cve):
-          for (k, v) in result[1].iteritems():
-            ovals[cve][k] = v
-        else:
-          ovals[cve] = result[1]
 
-        dsaRef = fileName[:-5].upper() # remove .data part
-        
-        # also parse corresponding wml file
-        wmlResult = wml.parseFile(path.replace('.data', '.wml'), DEBIAN_VERSION)
-        if wmlResult:
-          data, releases = wmlResult
-        # skip if the wml file does not contain the debian release
-          if not debian_version in releases:
-              continue
-          for (k, v) in data.iteritems():
-            if k == "moreinfo":
-              if not "moreinfo" in ovals[cve]:
-                ovals[cve]["moreinfo"] = ""
-              # aggregate all advisories
-              ovals[cve][k] += "%s %s\n" % (dsaRef, v)
-            elif k in ('description'): # some keys shouldn't be clobbered
-              if not k in ovals[cve]:
-                ovals[cve][k] = v
-            else:
+      # also parse corresponding wml file
+      wmlResult = wml.parseFile(path.replace('.data', '.wml'), DEBIAN_VERSION)
+
+      dsaRef = fileName[:-5].upper() # remove .data part
+
+      if result:
+        secrefs = result[1].get('secrefs', ())
+        logging.debug("SECREFS: %s" % (secrefs,))
+        for cve in secrefs:
+          if ovals.has_key(cve):
+            for (k, v) in result[1].iteritems():
               ovals[cve][k] = v
-          if not "release" in ovals[cve]:
-            ovals[cve]["release"] = {}
-          ovals[cve]['release'].update({debian_version: releases[debian_version]})
+          else:
+            ovals[cve] = result[1]
+          if cve == 'CVE-2020-10729':
+            logging.debug("YES: %s" % ovals[cve])
+
+          if wmlResult:
+            data, releases = wmlResult
+          # skip if the wml file does not contain the debian release
+            if not debian_version in releases:
+                continue
+            for (k, v) in data.iteritems():
+              if k == "moreinfo":
+                if not "moreinfo" in ovals[cve]:
+                  ovals[cve]["moreinfo"] = ""
+                # aggregate all advisories
+                ovals[cve][k] += "%s %s\n" % (dsaRef, v)
+              elif k in ('description'): # some keys shouldn't be clobbered
+                if not k in ovals[cve]:
+                  ovals[cve][k] = v
+              else:
+                ovals[cve][k] = v
+            if not "release" in ovals[cve]:
+              ovals[cve]["release"] = {}
+            ovals[cve]['release'].update({debian_version: releases[debian_version]})
 
   return 0
 
@@ -149,7 +155,7 @@ def parseJSON(json_data, debian_release):
                                         'description': json_data[package][cve].get("description", ""),
                                         'secrefs': cve,
                                         'release': release}})
-                    logging.log(logging.DEBUG, "Created entry for %s" % cve)
+                    logging.log(logging.DEBUG, "Created entry for %s: %s" % (cve, ovals[cve]))
 
 
 def get_json_data(json_file):

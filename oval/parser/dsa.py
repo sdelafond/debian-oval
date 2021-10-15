@@ -48,6 +48,7 @@ def parseFile (path):
   
   for line in dsaFile:
     line= line.decode ("ISO-8859-2")
+    logging.log(logging.DEBUG, ". looking at line: " + line.strip())
     datepatern = re.compile (r'report_date>([\d-]+)</define-tag>')
     result = datepatern.search (line)
     if result:
@@ -55,28 +56,29 @@ def parseFile (path):
       normDate = lambda (date): "-".join([(len(p) > 1 and p or "0"+p) for p in date.split("-")])
       data["date"] = normDate(date)
     
-    descrpatern = re.compile (r'(CVE-\d+-\d+)')
+    descrpatern = re.compile (r'pagetitle>(.*?)</define-tag>')
     result = descrpatern.search (line)
     if result:
       data["title"] = result.groups()[0]
-      logging.log(logging.DEBUG, "Extracted CVE ID: " + data["title"])
+      logging.log(logging.DEBUG, "Extracted page title: " + data["title"])
       continue
     
     refspatern = re.compile (r'secrefs>(.*?)</define-tag>')
     result = refspatern.search (line)
     if result:
-      data["secrefs"] = result.groups()[0]
-      logging.log(logging.DEBUG, "Extracted security references: " + data["secrefs"])
+      data["secrefs"] = [str(s) for s in re.split(r'\s+', result.groups()[0])]
+      logging.log(logging.DEBUG, "Extracted security references: %s" % (data["secrefs"],))
 
     pakpatern = re.compile (r'packages>(.*?)</define-tag>')
     result = pakpatern.search (line)
     if result:
       data["packages"] = result.groups()[0]
+      logging.log(logging.DEBUG, "Extracted packages: " + data["packages"])
 
     vulpatern = re.compile (r'isvulnerable>(.*?)</define-tag>')
     result = vulpatern.search (line)
     if result:
-      data["vulnarable"] = result.groups()[0]
+      data["vulnerable"] = result.groups()[0]
 
     fixpatern = re.compile (r'fixed>(.*?)</define-tag>')
     result = fixpatern.search (line)
@@ -119,6 +121,8 @@ def parseFile (path):
           data["release"][deb_ver][architecture][package] = version
         else:
           data["release"][deb_ver][architecture] = {package : version}
+
+  logging.debug("... found dsa data: %s" % data )
   
   if "title" in data:
     return data["title"], data

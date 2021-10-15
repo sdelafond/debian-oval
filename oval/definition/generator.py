@@ -449,7 +449,7 @@ def createDefinition (cve, oval):
   ### Definition : Metadata : Affected : END ###
 
   refpatern = re.compile (r'((CVE|CAN)-[\d-]+)')
-  for ref in oval.get("secrefs").split(" "):
+  for ref in oval.get("secrefs"):
     result = refpatern.search(ref)
     if result:
       (ref_id, source) = result.groups()
