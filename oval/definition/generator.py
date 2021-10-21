@@ -433,7 +433,12 @@ def createDefinition (cve, oval):
 
   ### Definition block: Metadata, Notes, Criteria
   ovalId = getOvalId(cve)
-  definition = __createXMLElement ("definition", attrs = {"id" : "oval:org.debian:def:%s" % ovalId, "version" : "1", "class" : "vulnerability"})
+  if 'CVE-' in oval['title']:
+    definition = __createXMLElement ("definition", attrs = {"id" : "oval:org.debian:def:%s" % ovalId,
+                                                            "version" : "1", "class" : "vulnerability"})
+  elif 'DSA-' in oval['title']:
+    definition = __createXMLElement ("definition", attrs = {"id" : "oval:org.debian:def:%s" % ovalId,
+                                                            "version" : "1", "class" : "patch"})
 
   ### Definition : Metadata : title, affected, reference, description ###
   metadata = __createXMLElement ("metadata")
@@ -502,7 +507,7 @@ def createOVALDefinitions (ovals):
   for cve in keyids:
     try:
       # filter for CVEs
-      if cve.find("CVE-") < 0:
+      if (not "CVE-" in cve) and (not 'DSA-' in cve):
         continue
       definitions.append(createDefinition(cve, ovals[cve]))
     except CVEFormatException:

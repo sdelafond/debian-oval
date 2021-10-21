@@ -69,7 +69,7 @@ def parseFile (path, debianVersion):
          deb_version = ""
 
       # find fixed version
-      new_version_pattern = re.compile(r'version ([a-zA-Z0-9.+\-:~]+?)\.?(</p>|\s)')
+      new_version_pattern = re.compile(r'version ([0-9]+[.:]+[a-zA-Z0-9.+\-:~]+?)\.?(</p>|\s)')
       version = new_version_pattern.search(line)
 
       # add fixed version and debian release in releases dict
