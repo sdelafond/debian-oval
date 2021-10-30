@@ -153,7 +153,6 @@ def parseJSON(json_data, debian_release):
     """
     global ovals
 
-    today = date.today()
     logging.log(logging.DEBUG, "Start of JSON Parse.")
     for package in json_data:
         logging.log(logging.DEBUG, "Parsing package %s" % package)
@@ -174,7 +173,7 @@ def parseJSON(json_data, debian_release):
                     ovals.update({cve: {"packages": package,
                                         'title': cve,
                                         'vulnerable': "yes",
-                                        'date': str(today.isoformat()),
+                                        'date': None,
                                         'fixed': f_str,
                                         'description': json_data[package][cve].get("description", ""),
                                         'secrefs': (cve,),

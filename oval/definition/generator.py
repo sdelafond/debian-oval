@@ -463,8 +463,9 @@ def createDefinition (cve, oval):
   #TODO: move this info to other place
   metadata.append ( __createXMLElement ("description", oval["description"]))
   debianMetadata = __createXMLElement ("debian")
-  if oval.has_key("date"):
-    debianMetadata.append ( __createXMLElement ("date", oval["date"]) )
+  date = oval.get("date", None)
+  if date:
+    debianMetadata.append ( __createXMLElement ("date", date) )
   debianMetadata.append ( __createXMLElement ("moreinfo", oval["moreinfo"]))
   metadata.append (debianMetadata)
   definition.append ( metadata )
