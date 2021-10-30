@@ -85,9 +85,8 @@ def add_wml_result(wmlResult, cve, dsaRef, debian_release):
     for (k, v) in wml_data.iteritems():
         if k == "moreinfo":
             if "moreinfo" not in ovals[cve]:
-                ovals[cve]["moreinfo"] = ""
-                # aggregate all advisories
-                ovals[cve][k] += "%s %s\n" % (dsaRef, v.replace('\n', ' '))
+                ovals[cve]['dsa'] = dsaRef
+                ovals[cve][k] = v.replace('\n', ' ').strip()
         elif k == 'description':
             if "description" not in ovals[cve]:
                 ovals[cve][k] = v
