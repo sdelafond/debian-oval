@@ -66,7 +66,7 @@ def add_dsa_wml_to_cve(dsaResult, wmlResult, dsaRef, debian_release):
                 ovals[cve][k] = v
         else:
             ovals[cve] = dsaResult[1]
-            logging.debug("YES: %s" % ovals[cve])
+            logging.debug("NEW CVE: %s" % ovals[cve])
 
         # skip if the wml file does not contain the debian release
         if debian_version not in wmlResult[1]:
@@ -177,7 +177,7 @@ def parseJSON(json_data, debian_release):
                                         'date': str(today.isoformat()),
                                         'fixed': f_str,
                                         'description': json_data[package][cve].get("description", ""),
-                                        'secrefs': cve,
+                                        'secrefs': (cve,),
                                         'release': release}})
                     logging.log(logging.DEBUG, "Created entry for %s: %s" % (cve, ovals[cve]))
 
