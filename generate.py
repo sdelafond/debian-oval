@@ -159,13 +159,21 @@ def parseJSON(json_data, debian_release):
             logging.log(logging.DEBUG, "Getting releases for %s" % cve)
             release = {}
             for rel in json_data[package][cve]['releases']:
-                if json_data[package][cve]['releases'][rel]['status'] != \
-                        'resolved':
-                    fixed_v = '0'
-                    f_str = 'no'
-                else:
+                status = json_data[package][cve]['releases'][rel]['status']
+                f_str = 'no'
+
+                if status == 'resolved':
                     fixed_v = json_data[package][cve]['releases'][rel]['fixed_version']
                     f_str = 'yes'
+                else:
+                    fixed_v = '0'
+                    f_str = 'no'
+
+                if status == 'resolved' and fixed_v == '0':
+                    # This CVE never impacted the given release
+                    logging.log(logging.DEBUG, "Release %s not affected by %s" % (rel, cve))
+                    continue
+
                 if debian_release == rel:
                     release.update({DEBIAN_VERSION[rel]: {u'all': {
                         package: fixed_v}}})
