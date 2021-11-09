@@ -72,7 +72,7 @@ testsHash = {"arch" : {}, "release": {}, "obj": {}, "fileSte": {}, "unameSte" : 
 unameArchTable = {'i386' : 'i686', 'amd64' : 'x86-64', 'ia64' : 'ia64', 'powerpc' : 'ppc', 's390' : 's390x', 'm86k' : 'm86k'} 
 
 def getOvalId(cve):
-  return cve[3:].replace('-', '')
+  return re.sub(r'[^0-9]', '', cve[3:])
 
 def __getNewId (type):
   """Generate new unique id for tests, objects or states
