@@ -12,7 +12,7 @@ class differ:
         pass
     
     def __dictAdd (self, dic, pkey, key, value):
-        if dic.has_key (pkey):
+        if pkey in dic:
             dic[pkey][key] = value
         else:
             dic[pkey] = {key : value}

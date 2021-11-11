@@ -42,8 +42,8 @@ DEBIAN_VERSION = {
 def usage (prog = "parse-wml-oval.py"):
     """Print information about script flags and options"""
 
-    print """usage: %s [vh] [-d <directory>]\t-d\twhich directory use for
-    dsa definition search\t-v\tverbose mode\t-h\tthis help""" % prog
+    print("""usage: %s [vh] [-d <directory>]\t-d\twhich directory use for
+    dsa definition search\t-v\tverbose mode\t-h\tthis help""" % prog)
 def printdsas(ovals):
     """ Generate and print OVAL Definitions for collected DSA information """
 
@@ -60,7 +60,7 @@ def add_dsa_wml_to_cve(dsaResult, wmlResult, dsaRef, debian_release):
     for cve in secrefs:
         # add CVE or additional info from .data file to ovals dict
         if cve in ovals:
-            for (k, v) in dsaResult[1].iteritems():
+            for (k, v) in dsaResult[1].items():
                 if k in ovals[cve]:
                     continue
                 ovals[cve][k] = v
@@ -82,7 +82,7 @@ def add_wml_result(wmlResult, cve, dsaRef, debian_release):
 
     wml_data, releases = wmlResult
 
-    for (k, v) in wml_data.iteritems():
+    for (k, v) in wml_data.items():
         if k == "moreinfo":
             if "moreinfo" not in ovals[cve]:
                 ovals[cve]['dsa'] = dsaRef
@@ -126,7 +126,7 @@ def parsedirs(directory, regex, depth, debian_release):
       wmlResult = wml.parseFile(path.replace('.data', '.wml'), DEBIAN_VERSION)
 
       # remove .data extension
-      dsaRef = fileName[:-5].upper()
+      dsaRef = os.path.splitext(fileName)[0].upper()
 
       if dsaResult and wmlResult:
         # add data from .data files to cve in ovals dict
@@ -175,7 +175,7 @@ def parseJSON(json_data, debian_release):
                     continue
 
                 if debian_release == rel:
-                    release.update({DEBIAN_VERSION[rel]: {u'all': {
+                    release.update({DEBIAN_VERSION[rel]: {'all': {
                         package: fixed_v}}})
                     ovals.update({cve: {"packages": package,
                                         'title': cve,

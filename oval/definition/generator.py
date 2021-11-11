@@ -17,7 +17,7 @@ from oval.definition.differ import differ
 import re
 
 # from http://boodebr.org/main/python/all-about-python-and-unicode#UNI_XML
-RE_XML_ILLEGAL = u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])' + u'|' + u'([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % (unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff), unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff), unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff)) 
+RE_XML_ILLEGAL = '([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])' + '|' + '([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % (chr(0xd800),chr(0xdbff),chr(0xdc00),chr(0xdfff), chr(0xd800),chr(0xdbff),chr(0xdc00),chr(0xdfff), chr(0xd800),chr(0xdbff),chr(0xdc00),chr(0xdfff)) 
 regex = re.compile(RE_XML_ILLEGAL)
 nsmap = {
     None       : "http://oval.mitre.org/XMLSchema/oval-definitions-5",
@@ -101,7 +101,7 @@ def __getNewId (type):
 def __createOVALDpkginfoObject (name):
   """ Generate OVAL dpkginfo_object definition """
   
-  if not testsHash["obj"].has_key(name):
+  if name not in testsHash["obj"]:
     objectId = __getNewId ("object");
     object = __createXMLElement("dpkginfo_object",
       attrs={"id":objectId, 
@@ -118,7 +118,7 @@ def __createOVALTextfilecontentObject (pattern, path = "/etc", filename = "debia
   """ Generate OVAL textfilecontent54_object definition """
   name = path + filename + pattern
   
-  if not testsHash["obj"].has_key(name):
+  if name not in testsHash["obj"]:
     objectId = __getNewId ("object");
     object = __createXMLElement("textfilecontent54_object",
       attrs={"id":objectId, 
@@ -138,7 +138,7 @@ def __createOVALUnameObject ():
   """ Generate OVAL uname_object definition """
   name = "uname_object"
   
-  if not testsHash["obj"].has_key(name):
+  if name not in testsHash["obj"]:
     objectId = __getNewId ("object");
     object = __createXMLElement("uname_object",
       attrs={"id":objectId, 
@@ -156,7 +156,7 @@ def __createOVALState (value, operation = "less than"):
     Use state hash for optimization of resulted XML
   """
   #TODO: Add arch state generation
-  if not testsHash["dpkgSte"].has_key(operation) or not testsHash["dpkgSte"][operation].has_key(value):
+  if operation not in testsHash["dpkgSte"] or value not in testsHash["dpkgSte"][operation]:
     stateId = __getNewId ("state")
 
     state = __createXMLElement("dpkginfo_state", 
@@ -184,7 +184,7 @@ def __createOVALUnameState (field, value, operation = "equals"):
     pass
 
   #TODO: Add arch state generation
-  if not testsHash["unameSte"].has_key(operation) or not testsHash["unameSte"][operation].has_key(value):
+  if operation not in testsHash["unameSte"] or value not in testsHash["unameSte"][operation]:
     stateId = __getNewId ("state")
 
     state = __createXMLElement("uname_state", 
@@ -205,7 +205,7 @@ def __createOVALTextfilecontentState (value, operation = "equals"):
     Use state hash for optimization of resulted XML
   """
   #TODO: Add arch state generation
-  if not testsHash["fileSte"].has_key(operation) or not testsHash["fileSte"][operation].has_key(value):
+  if operation not in testsHash["fileSte"] or value not in testsHash["fileSte"][operation]:
     stateId = __getNewId ("state")
 
     state = __createXMLElement("textfilecontent54_state", 
@@ -241,7 +241,7 @@ def __createDPKGTest(name, version):
 def __createTest(testType, value):
   """ Generate OVAL test for release or architecture cases"""
   
-  if not testsHash[testType].has_key(value):
+  if value not in testsHash[testType]:
     comment = None
       
     ref = __getNewId("test")
@@ -322,7 +322,7 @@ def createPlatformDefinition (release, data, cve):
   archCriteria = __createXMLElement ("criteria", attrs = {"comment" : "Architecture section", "operator" : "OR"})
 
   # Handle architecture independed section
-  if data.has_key ("all"):
+  if "all" in data:
     archIndepCriteria = __createXMLElement ("criteria", attrs={"comment" : "Architecture independent section", "operator" : "AND"})
     
     archIndepCriteria.append ( __createXMLElement ("criterion", attrs = {"test_ref" : __createTest("arch", "all"), "comment" : "all architecture"}))
@@ -348,7 +348,7 @@ def createPlatformDefinition (release, data, cve):
       dsaData = diff.getDiffer()
     
     diff.Clean()  
-    for (key, value) in dsaData.iteritems():
+    for (key, value) in dsaData.items():
       if key != "all":
         diff.compareElement(key, value)
     
@@ -379,7 +379,7 @@ def createPlatformDefinition (release, data, cve):
   if len(di):
     archDependCriteria = __createXMLElement ("criteria", attrs={"comment" : "Architecture depended section", "operator" : "AND"})
       
-    for (key, value) in di.iteritems():
+    for (key, value) in di.items():
       supportedPlatformCriteria = __createXMLElement ("criteria", attrs={"comment" : "Supported platform section", "operator" : "AND"})
       supportedPlatformCriteria.append ( __createXMLElement ("criterion", attrs = {"test_ref" : __createTest("arch", key), "comment" : "%s architecture" % key}))
     
@@ -406,28 +406,28 @@ def createDefinition (cve, oval):
     cve -- CVE dentificator
     oval -- CVE parsed data
   """
-  if not oval.has_key("release"):
+  if "release" not in oval:
     logging.log(logging.WARNING, "CVE %s: Release definition not well formatted. Ignoring this CVE." % cve)
     raise CVEFormatException
     
-  if not oval.has_key("packages"):
+  if "packages" not in oval:
     logging.log(logging.WARNING, "CVE %s: Package information missed. Ignoring this CVE." % cve)
     oval["packages"] = ""
     return None
 
-  if not oval.has_key("title"):
+  if "title" not in oval:
     logging.log(logging.WARNING, "CVE %s: title information missed." % cve)
     oval["title"] = ""
 
-  if not oval.has_key("description"):
+  if "description" not in oval:
     logging.log(logging.WARNING, "CVE %s: Description information missed." % cve)
     oval["description"] = ""
 
-  if not oval.has_key("moreinfo"):
+  if "moreinfo" not in oval:
     logging.log(logging.WARNING, "CVE %s: Moreinfo information missed." % cve)
     oval["moreinfo"] = ""
 
-  if not oval.has_key("secrefs"):
+  if "secrefs" not in oval:
     logging.log(logging.WARNING, "CVE %s: Secrefs information missed." % cve)
     oval["secrefs"] = ""
 
@@ -506,7 +506,7 @@ def createOVALDefinitions (ovals):
   
   definitions = etree.SubElement (root, "definitions")
   
-  keyids = ovals.keys()
+  keyids = list(ovals.keys())
   keyids.sort()
   for cve in keyids:
     try:
@@ -525,4 +525,4 @@ def createOVALDefinitions (ovals):
 
 def printOVALDefinitions (root):
   if len(root.find("definitions")):
-    print etree.tostring(root, encoding='utf-8', pretty_print=True, xml_declaration=True)
+    print(etree.tostring(root, pretty_print=True, xml_declaration=True).decode('utf-8'))

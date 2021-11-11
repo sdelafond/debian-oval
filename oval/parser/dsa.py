@@ -44,53 +44,54 @@ def parseFile (path):
   dsa = os.path.basename(path)[:-5]
   logging.log (logging.DEBUG, "Parsing DSA %s from file %s" % (dsa, filename))
 
-  dsaFile = open(path)
+  dsaFile = open(path, encoding="ISO-8859-2")
   
   for line in dsaFile:
-    line= line.decode ("ISO-8859-2")
     logging.log(logging.DEBUG, ". looking at line: " + line.strip())
     datepatern = re.compile (r'report_date>([\d-]+)</define-tag>')
     result = datepatern.search (line)
     if result:
       date = result.groups()[0]
-      normDate = lambda (date): "-".join([(len(p) > 1 and p or "0"+p) for p in date.split("-")])
+      normDate = lambda date: "-".join([(len(p) > 1 and p or "0"+p) for p in date.split("-")])
       data["date"] = normDate(date)
     
     descrpatern = re.compile (r'pagetitle>(.*?)</define-tag>')
     result = descrpatern.search (line)
     if result:
       data["title"] = result.groups()[0]
-      logging.log(logging.DEBUG, "Extracted page title: " + data["title"])
+      logging.log(logging.DEBUG, ".. extracted page title: " + data["title"])
       continue
     
     refspatern = re.compile (r'secrefs>(.*?)</define-tag>')
     result = refspatern.search (line)
     if result:
       data["secrefs"] = [str(s) for s in re.split(r'\s+', result.groups()[0])]
-      logging.log(logging.DEBUG, "Extracted security references: %s" % (data["secrefs"],))
+      logging.log(logging.DEBUG, ".. extracted security references: %s" % (data["secrefs"],))
 
     pakpatern = re.compile (r'packages>(.*?)</define-tag>')
     result = pakpatern.search (line)
     if result:
       data["packages"] = result.groups()[0]
-      logging.log(logging.DEBUG, "Extracted packages: " + data["packages"])
+      logging.log(logging.DEBUG, ".. extracted packages: " + data["packages"])
 
     vulpatern = re.compile (r'isvulnerable>(.*?)</define-tag>')
     result = vulpatern.search (line)
     if result:
       data["vulnerable"] = result.groups()[0]
+      logging.log(logging.DEBUG, ".. extracted vulnerable: " + data["vulnerable"])
 
     fixpatern = re.compile (r'fixed>(.*?)</define-tag>')
     result = fixpatern.search (line)
     if result:
       data["fixed"] = result.groups()[0]
+      logging.log(logging.DEBUG, ".. extracted fixed: " + data["fixed"])
 
     versionpatern = re.compile (r'<h3>Debian GNU/Linux (\d.\d) \((.*?)\)</h3>')
     result = versionpatern.search (line)
     if result:
       fdeb_ver = result.groups()[0]
 
-                # Alternative format for data files
+    # Alternative format for data files
     versionpatern = re.compile (r'affected_release>([\d\.]+)<')
     result = versionpatern.search (line)
     if result:
@@ -99,8 +100,8 @@ def parseFile (path):
       if fdeb_ver:
         deb_ver = fdeb_ver 
         fdeb_ver = None
-      if data.has_key("release"):
-        if data["release"].has_key(deb_ver):
+      if "release" in data:
+        if deb_ver in data["release"]:
           logging.log(logging.WARNING, "DSA %s: Found second files section for release %s" % (dsa, deb_ver))
         else:
           data["release"][deb_ver] = {}
@@ -111,13 +112,13 @@ def parseFile (path):
     # Those are prepended by fileurls
     # TODO: Packages do _NOT_ include epochs 
     # (that should be fixed)
-    if data.has_key("release") and deb_ver:
+    if "release" in data and deb_ver:
       urlpatern = re.compile (r'fileurl [\w:/.\-+]+/([\w\-.+~]+)\.deb[^i]')
       result = urlpatern.search (line)
       if result:
         (package, version, architecture) = result.groups()[0].split("_")
           
-        if data["release"][deb_ver].has_key(architecture):
+        if architecture in data["release"][deb_ver]:
           data["release"][deb_ver][architecture][package] = version
         else:
           data["release"][deb_ver][architecture] = {package : version}

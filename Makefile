@@ -5,7 +5,7 @@ WMLBASE=../..
 CUR_DIR=security/oval
 SUBS=
 
-PYTHON=/usr/bin/python
+PYTHON=/usr/bin/python3
 
 include $(WMLBASE)/Make.lang
 
@@ -47,10 +47,10 @@ $(XMLDESTFILES): $(HTMLDIR)/%: %
 # by Python when running the script
 clean::
 	  -rm -f oval-definitions-*.xml DebianSecTracker.json
-	
+
 cleandest::
 	  -rm -f $(HTMLDIR)/oval-definitions-*.xml
-	
+
 # Remove empty files to force regeneration
 check_empty_files:
 	@for file in oval-definitions-*.xml; do \

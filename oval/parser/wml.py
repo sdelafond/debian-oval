@@ -30,14 +30,14 @@ def parseFile (path, debianVersion):
   data = {}
   deb_version = ""
   releases = {}
-  dsa = os.path.basename(path)[:-5]
+  dsa = os.path.splitext(os.path.basename(path))[0]
   filename = os.path.basename (path)
 	
   logging.log (logging.DEBUG, "Parsing information for DSA %s from wml file %s" % (dsa, filename))
 	
   try:
 
-    wmlFile = open(path).read()
+    wmlFile = open(path, encoding="ISO-8859-2").read()
 
     # find and replace \n and \r\n symbols
     lines = re.sub('(?<![\r\n])(\r?\n|\n?\r)(?![\r\n])', ' ', wmlFile)
@@ -46,8 +46,6 @@ def parseFile (path, debianVersion):
     dversion_pattern = re.compile(r'(%s)' % '|'.join(debianVersion.keys()), re.IGNORECASE)
 
     for line in lines:
-      line= line.decode("ISO-8859-2")
-
       # find description part
       descrpatern = re.compile(r'description>(.*?)</define-tag>')
       description = descrpatern.search(line)
@@ -75,7 +73,7 @@ def parseFile (path, debianVersion):
       # add fixed version and debian release in releases dict
       if version and deb_version != "" and not debianVersion[deb_version] in releases:
         pack_ver = version.groups()[0]
-        releases.update({debianVersion[deb_version]: {u"all": {grabPackName(path): pack_ver}}})
+        releases.update({debianVersion[deb_version]: {"all": {grabPackName(path): pack_ver}}})
 
   except IOError:
     logging.log (logging.ERROR, "Can't work with file %s" % path)
