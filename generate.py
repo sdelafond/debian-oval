@@ -46,7 +46,8 @@ def usage (prog = "parse-wml-oval.py"):
     dsa definition search\t-v\tverbose mode\t-h\tthis help""" % prog)
 def printdsas(ovals):
     """ Generate and print OVAL Definitions for collected DSA information """
-
+    import pprint
+    logging.debug(pprint.pformat(ovals))
     ovalDefinitions = oval.definition.generator.createOVALDefinitions(ovals)
     oval.definition.generator.printOVALDefinitions(ovalDefinitions)
 
@@ -55,46 +56,61 @@ def add_dsa_wml_to_cve(dsaResult, wmlResult, dsaRef, debian_release):
     global ovals
     debian_version = DEBIAN_VERSION[debian_release]
 
-    secrefs = dsaResult[1].get('secrefs', ())
-    logging.debug("SECREFS: %s" % (secrefs,))
-    for cve in secrefs:
-        # add CVE or additional info from .data file to ovals dict
-        if cve in ovals:
-            for (k, v) in dsaResult[1].items():
-                if k in ovals[cve]:
-                    continue
-                ovals[cve][k] = v
-        else:
-            ovals[cve] = dsaResult[1]
-            logging.debug("NEW CVE: %s" % ovals[cve])
+    secrefs = dsaResult[1].get('secrefs', [])
+    logging.debug("working on SECREFS: %s" % (secrefs,))
+
+    # tack on dsaRef to make sure we always create a DSA entry even if
+    # this DSA was not linked to any bug number (see comment below)
+    for key in secrefs + [dsaRef,]:
+        logging.debug("working on secref %s" % (key,))
+        if not key.startswith('CVE'):
+            # either a bug number, or the dsaRef itself: in this case
+            # we want to generate one *single* entry with a dsaRef
+            # key. It will later be exported as a patch/advisory OVAL
+            # entity
+            key = dsaRef
+            if key in ovals:
+                # we've already added and enriched that dsaRef entry
+                continue
+            else:
+                logging.debug("new entry %s: %s" % (key, dsaResult[1]))
+                ovals[key] = dsaResult[1]
+        elif key not in ovals:
+            # this secref is listed in a DSA, but was not present in
+            # the JSON export: nothing to enrich
+            continue
+
+        # add info from .data file
+        logging.debug("enriching existing entry %s with %s" % (key, dsaResult[1]))
+        for (k, v) in dsaResult[1].items():
+            if k not in ovals[key]:
+                ovals[key][k] = v
 
         # skip if the wml file does not contain the debian release
-        if debian_version not in wmlResult[1]:
-            continue
-        # add info from .wml file to CVE in
-        add_wml_result(wmlResult, cve, dsaRef, debian_release)
+        if debian_version in wmlResult[1]:
+            # add info from .wml file to CVE in
+            add_wml_result(wmlResult, key, dsaRef, debian_release)
 
 
-def add_wml_result(wmlResult, cve, dsaRef, debian_release):
+def add_wml_result(wmlResult, key, dsaRef, debian_release):
 
     global ovals
     debian_version = DEBIAN_VERSION[debian_release]
-
+    entry = ovals[key]
     wml_data, releases = wmlResult
+    logging.debug("enriching existing entry %s with %s" % (key, wml_data))
 
     for (k, v) in wml_data.items():
-        if k == "moreinfo":
-            if "moreinfo" not in ovals[cve]:
-                ovals[cve]['dsa'] = dsaRef
-                ovals[cve][k] = v.replace('\n', ' ').strip()
-        elif k == 'description':
-            if "description" not in ovals[cve]:
-                ovals[cve][k] = v
+        if k == "moreinfo" and k not in entry:
+            entry['dsa'] = dsaRef
+            entry[k] = v.replace('\n', ' ').strip()
+        elif k == 'description' and k not in entry:
+            entry[k] = v
         else:
-            ovals[cve][k] = v
-    if "release" not in ovals[cve]:
-        ovals[cve]["release"] = {}
-    ovals[cve]['release'].update({debian_version: releases[debian_version]})
+            entry[k] = v
+    if "release" not in entry:
+        entry["release"] = {}
+    entry['release'].update({debian_version: releases[debian_version]})
 
 
 def parsedirs(directory, regex, depth, debian_release):
@@ -138,9 +154,6 @@ def parsedirs(directory, regex, depth, debian_release):
         # add DSA to ovals dict
         if debian_version not in wmlResult[1]:
           continue
-        # add data from .data and .wml files to DSA entries
-        ovals[dsa_title] = dsa_data
-        add_wml_result(wmlResult, dsa_title, dsaRef, debian_release)
   return 0
 
 
