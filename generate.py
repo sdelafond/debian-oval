@@ -7,21 +7,21 @@
 # (c) 2015 Nicholas Luedtke
 # Licensed under the GNU General Public License version 2.                                                                                     
 
-import os
-from subprocess import call
-import sys
-import logging
 import argparse
 import json
+import os
+import logging
+import pprint
 import re
-from datetime import date
+import subprocess
+
 import oval.definition.generator
 from oval.parser import dsa
 from oval.parser import wml
 
-# TODO: 
+# TODO:
 # - these may need changed or reworked.
-# - ideally this would d be extracted from the release information @ website
+# - ideally they would be extracted from the release information @ website
 DEBIAN_VERSION = { 
     "potato" : "2",
     "sarge"  : "3",
@@ -39,7 +39,6 @@ DEBIAN_VERSION = {
 
 def printdsas(ovals):
     """ Generate and print OVAL Definitions for collected DSA information """
-    import pprint
     logging.debug(pprint.pformat(ovals))
     ovalDefinitions = oval.definition.generator.createOVALDefinitions(ovals)
     oval.definition.generator.printOVALDefinitions(ovalDefinitions)
@@ -225,7 +224,7 @@ def main(args):
         if os.path.isdir('/etc/ssl'):
             if os.path.isdir('/etc/ssl/ca-debian'):
                 args.insert(1, '--ca-directory=/etc/ssl/ca-debian')
-        call(args)
+        subprocess.call(args)
         logging.log(logging.DEBUG, "File %s received" % temp_file)
         json_data = get_json_data(temp_file)
         if os.path.isfile(temp_file):
@@ -237,6 +236,7 @@ def main(args):
     logging.log(logging.INFO, "Finished parsing JSON data")
     ovals = parsedirs(ovals, data_dir, re.compile('^d[ls]a.+\.data$'), 2, release)
     printdsas(ovals)
+
 
 if __name__ == "__main__":
     PARSER = argparse.ArgumentParser(description='Generates oval definitions '
