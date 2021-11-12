@@ -44,32 +44,37 @@ def printdsas(ovals):
     oval.definition.generator.printOVALDefinitions(ovalDefinitions)
 
 
+def get_key(secref, package, dsaRef = None):
+    if secref.startswith('CVE') or secref.startswith('TEMP'):
+        # A CVE can affect multiple source packages, so include that
+        # source package name in the key as well
+        key = "%s %s" % (secref, package)
+    else:
+        # Either a bug number, or the dsaRef itself, and therefore
+        # affecting only one source package: in this case we want to
+        # generate one *single* entry with that dsaRef key, and It
+        # will later be exported as a patch/advisory OVAL entity.
+        key = dsaRef
+
+    return key
+
+
 def add_dsa_info(ovals, dsaResult, wmlResult, dsaRef, debian_release):
+    logging.debug("working on dsa info %s" % (pprint.pformat(dsaResult),))
+
     debian_version = DEBIAN_VERSION[debian_release]
 
     secrefs = dsaResult[1].get('secrefs', [])
-    logging.debug("working on SECREFS: %s" % (secrefs,))
 
-    # tack on dsaRef to make sure we always create a DSA entry even if
-    # this DSA was not linked to any bug number (see comment below)
-    for key in secrefs + [dsaRef,]:
-        logging.debug("working on secref %s" % (key,))
-        if not key.startswith('CVE'):
-            # either a bug number, or the dsaRef itself: in this case
-            # we want to generate one *single* entry with a dsaRef
-            # key. It will later be exported as a patch/advisory OVAL
-            # entity
-            key = dsaRef
-            if key in ovals:
-                # we've already added and enriched that dsaRef entry
-                continue
-            else:
-                logging.debug("new entry %s: %s" % (key, dsaResult[1]))
-                ovals[key] = dsaResult[1]
-        elif key not in ovals:
-            # this secref is listed in a DSA, but was not present in
-            # the JSON export: nothing to enrich
-            continue
+    # tack on dsaRef to make sure we always create a DSA entry in the
+    # ovals dictionary, even if this DSA was not linked to any bug number
+    for secref in secrefs + [dsaRef,]:
+        key = get_key(secref, dsaResult[1]['packages'], dsaRef)
+        logging.debug("working on secref %s, considering key %s" % (secref, key))
+
+        if key not in ovals:
+            logging.debug("new entry %s: %s" % (key, dsaResult[1]))
+            ovals[key] = dsaResult[1]
 
         # add info from .data file
         logging.debug("enriching existing entry %s with %s" % (key, dsaResult[1]))
@@ -165,15 +170,16 @@ def parseJSON(ovals, json_data, debian_release):
                 if debian_release == rel:
                     release.update({DEBIAN_VERSION[rel]: {'all': {
                         package: fixed_v}}})
-                    ovals.update({cve: {"packages": package,
-                                        'title': cve,
+                    key = get_key(cve, package)
+                    ovals.update({key: {"packages": package,
+                                        'title': key ,
                                         'vulnerable': "yes",
                                         'date': None,
                                         'fixed': f_str,
                                         'description': json_data[package][cve].get("description", ""),
                                         'secrefs': (cve,),
                                         'release': release}})
-                    logging.log(logging.DEBUG, "Created entry for %s: %s" % (cve, ovals[cve]))
+                    logging.log(logging.DEBUG, "Created entry for %s: %s" % (key, ovals[key]))
 
     return ovals
 

@@ -9,6 +9,7 @@
 # (c) 2004 Javier Fernandez-Sanguino                                                                                           
 # Licensed under the GNU General Public License version 2.
 
+import hashlib
 import re
 import logging
 import datetime
@@ -71,8 +72,8 @@ testsHash = {"arch" : {}, "release": {}, "obj": {}, "fileSte": {}, "unameSte" : 
 #We need more info about alpha, arm, hppa, bmips, lmips
 unameArchTable = {'i386' : 'i686', 'amd64' : 'x86-64', 'ia64' : 'ia64', 'powerpc' : 'ppc', 's390' : 's390x', 'm86k' : 'm86k'} 
 
-def getOvalId(cve):
-  return re.sub(r'[^0-9]', '', cve[3:])
+def getOvalId(key):
+  return int.from_bytes(hashlib.md5(key.encode()).digest(), 'big')
 
 def __getNewId (type):
   """Generate new unique id for tests, objects or states
@@ -433,10 +434,10 @@ def createDefinition (cve, oval):
 
   ### Definition block: Metadata, Notes, Criteria
   ovalId = getOvalId(cve)
-  if 'CVE-' in oval['title']:
+  if oval['title'].startswith('CVE'):
     definition = __createXMLElement ("definition", attrs = {"id" : "oval:org.debian:def:%s" % ovalId,
                                                             "version" : "1", "class" : "vulnerability"})
-  elif 'DSA-' in oval['title']:
+  elif oval['title'].startswith('DSA'):
     definition = __createXMLElement ("definition", attrs = {"id" : "oval:org.debian:def:%s" % ovalId,
                                                             "version" : "1", "class" : "patch"})
 
