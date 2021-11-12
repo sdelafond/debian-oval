@@ -19,9 +19,6 @@ import oval.definition.generator
 from oval.parser import dsa
 from oval.parser import wml
 
-
-ovals = {}
-
 # TODO: 
 # - these may need changed or reworked.
 # - ideally this would d be extracted from the release information @ website
@@ -39,11 +36,14 @@ DEBIAN_VERSION = {
     "bullseye" : "11",
     "sid" : "1000"}
 
+
 def usage (prog = "parse-wml-oval.py"):
     """Print information about script flags and options"""
 
     print("""usage: %s [vh] [-d <directory>]\t-d\twhich directory use for
     dsa definition search\t-v\tverbose mode\t-h\tthis help""" % prog)
+
+
 def printdsas(ovals):
     """ Generate and print OVAL Definitions for collected DSA information """
     import pprint
@@ -51,9 +51,8 @@ def printdsas(ovals):
     ovalDefinitions = oval.definition.generator.createOVALDefinitions(ovals)
     oval.definition.generator.printOVALDefinitions(ovalDefinitions)
 
-def add_dsa_info(dsaResult, wmlResult, dsaRef, debian_release):
 
-    global ovals
+def add_dsa_info(ovals, dsaResult, wmlResult, dsaRef, debian_release):
     debian_version = DEBIAN_VERSION[debian_release]
 
     secrefs = dsaResult[1].get('secrefs', [])
@@ -89,12 +88,12 @@ def add_dsa_info(dsaResult, wmlResult, dsaRef, debian_release):
         # skip if the wml file does not contain the debian release
         if debian_version in wmlResult[1]:
             # add info from .wml file to CVE in
-            add_wml_info(wmlResult, key, dsaRef, debian_release)
+            ovals = add_wml_info(ovals, wmlResult, key, dsaRef, debian_release)
+
+    return ovals
 
 
-def add_wml_info(wmlResult, key, dsaRef, debian_release):
-
-    global ovals
+def add_wml_info(ovals, wmlResult, key, dsaRef, debian_release):
     debian_version = DEBIAN_VERSION[debian_release]
     entry = ovals[key]
     wml_data, releases = wmlResult
@@ -112,15 +111,14 @@ def add_wml_info(wmlResult, key, dsaRef, debian_release):
         entry["release"] = {}
     entry['release'].update({debian_version: releases[debian_version]})
 
+    return ovals
 
-def parsedirs(directory, regex, depth, debian_release):
+
+def parsedirs(ovals, directory, regex, depth, debian_release):
     """ Recursive search directory for DSA files contain postfix in their names.
 
       For this files called oval.parser.dsa.parseFile() for extracting DSA information.
     """
-
-    global ovals
-
     if depth == 0:
         logging.log(logging.DEBUG, "Maximum depth reached at directory " + directory)
         return 0
@@ -131,7 +129,7 @@ def parsedirs(directory, regex, depth, debian_release):
 
         if os.access(path, os.R_OK) and os.path.isdir(path) and not os.path.islink(path) and fileName[0] != '.':
             logging.log(logging.DEBUG, "Entering directory " + path)
-            parsedirs(path, regex, depth-1, debian_release)
+            parsedirs(ovals, path, regex, depth-1, debian_release)
 
         # parse fileNames
         if os.access(path, os.R_OK) and regex.search(fileName) and fileName[0] != '.' and fileName[0] != '#':
@@ -144,16 +142,17 @@ def parsedirs(directory, regex, depth, debian_release):
             dsaRef = os.path.splitext(fileName)[0].upper()
 
             if dsaResult and wmlResult:
-                add_dsa_info(dsaResult, wmlResult, dsaRef, debian_release)
+                ovals = add_dsa_info(ovals, dsaResult, wmlResult, dsaRef, debian_release)
+
+    return ovals
 
 
-def parseJSON(json_data, debian_release):
+def parseJSON(ovals, json_data, debian_release):
     """
     Parse the JSON data and extract information needed for OVAL definitions
     :param json_data: Json_Data
     :return:
     """
-    global ovals
 
     logging.log(logging.DEBUG, "Start of JSON Parse.")
     for package in json_data:
@@ -189,6 +188,8 @@ def parseJSON(json_data, debian_release):
                                         'secrefs': (cve,),
                                         'release': release}})
                     logging.log(logging.DEBUG, "Created entry for %s: %s" % (cve, ovals[cve]))
+
+    return ovals
 
 
 def get_json_data(json_file):
@@ -244,10 +245,10 @@ def main(args):
             logging.log(logging.DEBUG, "Removing file %s" % temp_file)
             os.remove(temp_file)
 
-    parseJSON(json_data, release)
-    parsedirs(data_dir, re.compile('^dsa.+\.data$'), 2, release)
-    parsedirs(data_dir, re.compile('^dla.+\.data$'), 2, release)
+    ovals = {}
+    ovals = parseJSON(ovals, json_data, release)
     logging.log(logging.INFO, "Finished parsing JSON data")
+    ovals = parsedirs(ovals, data_dir, re.compile('^d[ls]a.+\.data$'), 2, release)
     printdsas(ovals)
 
 if __name__ == "__main__":
