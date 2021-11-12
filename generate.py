@@ -51,7 +51,7 @@ def printdsas(ovals):
     ovalDefinitions = oval.definition.generator.createOVALDefinitions(ovals)
     oval.definition.generator.printOVALDefinitions(ovalDefinitions)
 
-def add_dsa_wml_to_cve(dsaResult, wmlResult, dsaRef, debian_release):
+def add_dsa_info(dsaResult, wmlResult, dsaRef, debian_release):
 
     global ovals
     debian_version = DEBIAN_VERSION[debian_release]
@@ -89,10 +89,10 @@ def add_dsa_wml_to_cve(dsaResult, wmlResult, dsaRef, debian_release):
         # skip if the wml file does not contain the debian release
         if debian_version in wmlResult[1]:
             # add info from .wml file to CVE in
-            add_wml_result(wmlResult, key, dsaRef, debian_release)
+            add_wml_info(wmlResult, key, dsaRef, debian_release)
 
 
-def add_wml_result(wmlResult, key, dsaRef, debian_release):
+def add_wml_info(wmlResult, key, dsaRef, debian_release):
 
     global ovals
     debian_version = DEBIAN_VERSION[debian_release]
@@ -114,47 +114,37 @@ def add_wml_result(wmlResult, key, dsaRef, debian_release):
 
 
 def parsedirs(directory, regex, depth, debian_release):
-  """ Recursive search directory for DSA files contain postfix in their names.
+    """ Recursive search directory for DSA files contain postfix in their names.
 
-    For this files called oval.parser.dsa.parseFile() for extracting DSA information.
-  """
+      For this files called oval.parser.dsa.parseFile() for extracting DSA information.
+    """
 
-  global ovals
-  debian_version = DEBIAN_VERSION[debian_release]
+    global ovals
 
-  if depth == 0:
-    logging.log(logging.DEBUG, "Maximum depth reached at directory " + directory)
-    return 0
+    if depth == 0:
+        logging.log(logging.DEBUG, "Maximum depth reached at directory " + directory)
+        return 0
 
-  for fileName in os.listdir(directory):
-    path = "%s/%s" % (directory, fileName)
-    logging.log(logging.DEBUG, "Checking %s (for %s at %s)" % (fileName, regex.pattern, depth))
+    for fileName in os.listdir(directory):
+        path = "%s/%s" % (directory, fileName)
+        logging.log(logging.DEBUG, "Checking %s (for %s at %s)" % (fileName, regex.pattern, depth))
 
-    if os.access(path, os.R_OK) and os.path.isdir(path) and not os.path.islink(path) and fileName[0] != '.':
-      logging.log(logging.DEBUG, "Entering directory " + path)
-      parsedirs(path, regex, depth-1, debian_release)
+        if os.access(path, os.R_OK) and os.path.isdir(path) and not os.path.islink(path) and fileName[0] != '.':
+            logging.log(logging.DEBUG, "Entering directory " + path)
+            parsedirs(path, regex, depth-1, debian_release)
 
-    # parse fileNames
-    if os.access(path, os.R_OK) and regex.search(fileName) and fileName[0] != '.' and fileName[0] != '#':
-      dsaResult = dsa.parseFile(path)
+        # parse fileNames
+        if os.access(path, os.R_OK) and regex.search(fileName) and fileName[0] != '.' and fileName[0] != '#':
+            dsaResult = dsa.parseFile(path)
 
-      # also parse corresponding wml file
-      wmlResult = wml.parseFile(path.replace('.data', '.wml'), DEBIAN_VERSION)
+            # also parse corresponding wml file
+            wmlResult = wml.parseFile(path.replace('.data', '.wml'), DEBIAN_VERSION)
 
-      # remove .data extension
-      dsaRef = os.path.splitext(fileName)[0].upper()
+            # remove .data extension
+            dsaRef = os.path.splitext(fileName)[0].upper()
 
-      if dsaResult and wmlResult:
-        # add data from .data files to cve in ovals dict
-        add_dsa_wml_to_cve(dsaResult, wmlResult, dsaRef, debian_release)
-
-        # add info about DSA in ovals dict
-        dsa_title, dsa_data = dsaResult
-
-        # add DSA to ovals dict
-        if debian_version not in wmlResult[1]:
-          continue
-  return 0
+            if dsaResult and wmlResult:
+                add_dsa_info(dsaResult, wmlResult, dsaRef, debian_release)
 
 
 def parseJSON(json_data, debian_release):
