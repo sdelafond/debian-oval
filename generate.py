@@ -115,34 +115,28 @@ def add_wml_info(ovals, wmlResult, key, dsaRef, debian_release):
 
 
 def parsedirs(ovals, directory, regex, depth, debian_release):
-    """ Recursive search directory for DSA files contain postfix in their names.
-
-      For this files called oval.parser.dsa.parseFile() for extracting DSA information.
     """
-    if depth == 0:
-        logging.log(logging.DEBUG, "Maximum depth reached at directory " + directory)
-        return 0
+    Recursively search directory for DSA files matching given regex,
+    then call oval.parser.dsa.parseFile() to extract the DSA
+    information.
+    """
 
-    for fileName in os.listdir(directory):
-        path = "%s/%s" % (directory, fileName)
-        logging.log(logging.DEBUG, "Checking %s (for %s at %s)" % (fileName, regex.pattern, depth))
+    for root, dirs, files, in os.walk(directory):
+        for name in files:
+            path = os.path.join(root, name)
+            logging.debug("checking %s for %s" % (path, regex.pattern))
 
-        if os.access(path, os.R_OK) and os.path.isdir(path) and not os.path.islink(path) and fileName[0] != '.':
-            logging.log(logging.DEBUG, "Entering directory " + path)
-            parsedirs(ovals, path, regex, depth-1, debian_release)
+            if os.access(path, os.R_OK) and regex.search(name):
+                dsaResult = dsa.parseFile(path)
 
-        # parse fileNames
-        if os.access(path, os.R_OK) and regex.search(fileName) and fileName[0] != '.' and fileName[0] != '#':
-            dsaResult = dsa.parseFile(path)
+                # also parse corresponding wml file
+                wmlResult = wml.parseFile(path.replace('.data', '.wml'), DEBIAN_VERSION)
 
-            # also parse corresponding wml file
-            wmlResult = wml.parseFile(path.replace('.data', '.wml'), DEBIAN_VERSION)
+                # remove .data extension
+                dsaRef = os.path.splitext(name)[0].upper()
 
-            # remove .data extension
-            dsaRef = os.path.splitext(fileName)[0].upper()
-
-            if dsaResult and wmlResult:
-                ovals = add_dsa_info(ovals, dsaResult, wmlResult, dsaRef, debian_release)
+                if dsaResult and wmlResult:
+                    ovals = add_dsa_info(ovals, dsaResult, wmlResult, dsaRef, debian_release)
 
     return ovals
 
