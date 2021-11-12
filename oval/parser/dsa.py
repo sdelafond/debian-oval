@@ -47,7 +47,7 @@ def parseFile (path):
   dsaFile = open(path, encoding="ISO-8859-2")
   
   for line in dsaFile:
-    logging.log(logging.DEBUG, ". looking at line: " + line.strip())
+    logging.debug(". looking at line: " + line.strip())
     datepatern = re.compile (r'report_date>([\d-]+)</define-tag>')
     result = datepatern.search (line)
     if result:
@@ -59,32 +59,32 @@ def parseFile (path):
     result = descrpatern.search (line)
     if result:
       data["title"] = result.groups()[0]
-      logging.log(logging.DEBUG, ".. extracted page title: " + data["title"])
+      logging.debug(".. extracted page title: " + data["title"])
       continue
     
     refspatern = re.compile (r'secrefs>(.*?)</define-tag>')
     result = refspatern.search (line)
     if result:
       data["secrefs"] = [str(s) for s in re.split(r'\s+', result.groups()[0])]
-      logging.log(logging.DEBUG, ".. extracted security references: %s" % (data["secrefs"],))
+      logging.debug(".. extracted security references: %s" % (data["secrefs"],))
 
     pakpatern = re.compile (r'packages>(.*?)</define-tag>')
     result = pakpatern.search (line)
     if result:
       data["packages"] = result.groups()[0]
-      logging.log(logging.DEBUG, ".. extracted packages: " + data["packages"])
+      logging.debug(".. extracted packages: " + data["packages"])
 
     vulpatern = re.compile (r'isvulnerable>(.*?)</define-tag>')
     result = vulpatern.search (line)
     if result:
       data["vulnerable"] = result.groups()[0]
-      logging.log(logging.DEBUG, ".. extracted vulnerable: " + data["vulnerable"])
+      logging.debug(".. extracted vulnerable: " + data["vulnerable"])
 
     fixpatern = re.compile (r'fixed>(.*?)</define-tag>')
     result = fixpatern.search (line)
     if result:
       data["fixed"] = result.groups()[0]
-      logging.log(logging.DEBUG, ".. extracted fixed: " + data["fixed"])
+      logging.debug(".. extracted fixed: " + data["fixed"])
 
     versionpatern = re.compile (r'<h3>Debian GNU/Linux (\d.\d) \((.*?)\)</h3>')
     result = versionpatern.search (line)
@@ -102,7 +102,7 @@ def parseFile (path):
         fdeb_ver = None
       if "release" in data:
         if deb_ver in data["release"]:
-          logging.log(logging.WARNING, "DSA %s: Found second files section for release %s" % (dsa, deb_ver))
+          logging.warning("DSA %s: Found second files section for release %s" % (dsa, deb_ver))
         else:
           data["release"][deb_ver] = {}
       else:

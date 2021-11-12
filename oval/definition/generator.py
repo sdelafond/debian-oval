@@ -315,7 +315,7 @@ def createPlatformDefinition (release, data, cve):
   """
   #Raise exception if we receive too small data
   if len(data) == 0:
-    logging.log(logging.WARNING, "CVE %s: Information of affected platforms is not available." % cve)
+    logging.warning("CVE %s: Information of affected platforms is not available." % cve)
   
   softwareCriteria = __createXMLElement ("criteria", attrs = {"comment" : "Release section", "operator" : "AND"})
   softwareCriteria.append ( __createXMLElement ("criterion", attrs={"test_ref" : __createTest("release", release), "comment" : "Debian %s is installed" % release}))
@@ -408,28 +408,28 @@ def createDefinition (cve, oval):
     oval -- CVE parsed data
   """
   if "release" not in oval:
-    logging.log(logging.WARNING, "CVE %s: Release definition not well formatted. Ignoring this CVE." % cve)
+    logging.warning("CVE %s: Release definition not well formatted. Ignoring this CVE." % cve)
     raise CVEFormatException
     
   if "packages" not in oval:
-    logging.log(logging.WARNING, "CVE %s: Package information missed. Ignoring this CVE." % cve)
+    logging.warning("CVE %s: Package information missed. Ignoring this CVE." % cve)
     oval["packages"] = ""
     return None
 
   if "title" not in oval:
-    logging.log(logging.WARNING, "CVE %s: title information missed." % cve)
+    logging.warning("CVE %s: title information missed." % cve)
     oval["title"] = ""
 
   if "description" not in oval:
-    logging.log(logging.WARNING, "CVE %s: Description information missed." % cve)
+    logging.warning("CVE %s: Description information missed." % cve)
     oval["description"] = ""
 
   if "moreinfo" not in oval:
-    logging.log(logging.WARNING, "CVE %s: Moreinfo information missed." % cve)
+    logging.warning("CVE %s: Moreinfo information missed." % cve)
     oval["moreinfo"] = ""
 
   if "secrefs" not in oval:
-    logging.log(logging.WARNING, "CVE %s: Secrefs information missed." % cve)
+    logging.warning("CVE %s: Secrefs information missed." % cve)
     oval["secrefs"] = ""
 
   ### Definition block: Metadata, Notes, Criteria

@@ -145,11 +145,11 @@ def parseJSON(ovals, json_data, debian_release):
     :return:
     """
 
-    logging.log(logging.DEBUG, "Start of JSON Parse.")
+    logging.debug("Start of JSON Parse.")
     for package in json_data:
-        logging.log(logging.DEBUG, "Parsing package %s" % package)
+        logging.debug("Parsing package %s" % package)
         for cve in json_data[package]:
-            logging.log(logging.DEBUG, "Getting releases for %s" % cve)
+            logging.debug("Getting releases for %s" % cve)
             release = {}
             for rel in json_data[package][cve]['releases']:
                 status = json_data[package][cve]['releases'][rel]['status']
@@ -164,7 +164,7 @@ def parseJSON(ovals, json_data, debian_release):
 
                 if status == 'resolved' and fixed_v == '0':
                     # This CVE never impacted the given release
-                    logging.log(logging.DEBUG, "Release %s not affected by %s" % (rel, cve))
+                    logging.debug("Release %s not affected by %s" % (rel, cve))
                     continue
 
                 if debian_release == rel:
@@ -179,7 +179,7 @@ def parseJSON(ovals, json_data, debian_release):
                                         'description': json_data[package][cve].get("description", ""),
                                         'secrefs': (cve,),
                                         'release': release}})
-                    logging.log(logging.DEBUG, "Created entry for %s: %s" % (key, ovals[key]))
+                    logging.debug("Created entry for %s: %s" % (key, ovals[key]))
 
     return ovals
 
@@ -190,7 +190,7 @@ def get_json_data(json_file):
     :param json_file:
     :return: JSON data (dependent on the file loaded, usually a dictionary.)
     """
-    logging.log(logging.DEBUG, "Extracting JSON file %s" % json_file)
+    logging.debug("Extracting JSON file %s" % json_file)
     with open(json_file, "r") as json_d:
         d = json.load(json_d)
     return d
@@ -220,26 +220,26 @@ def main(args):
     if json_file:
         json_data = get_json_data(json_file)
     else:
-        logging.log(logging.DEBUG, "Preparing to download JSONfile")
+        logging.debug("Preparing to download JSONfile")
         if os.path.isfile(temp_file):
-            logging.log(logging.WARNING, "Removing file %s" % temp_file)
+            logging.warning("Removing file %s" % temp_file)
             os.remove(temp_file)
-        logging.log(logging.DEBUG, "Issuing wget for JSON file")
+        logging.debug("Issuing wget for JSON file")
         args = ['wget', 'https://security-tracker.debian.org/tracker/data/json',
                 '-O', temp_file]
         if os.path.isdir('/etc/ssl'):
             if os.path.isdir('/etc/ssl/ca-debian'):
                 args.insert(1, '--ca-directory=/etc/ssl/ca-debian')
         subprocess.call(args)
-        logging.log(logging.DEBUG, "File %s received" % temp_file)
+        logging.debug("File %s received" % temp_file)
         json_data = get_json_data(temp_file)
         if os.path.isfile(temp_file):
-            logging.log(logging.DEBUG, "Removing file %s" % temp_file)
+            logging.debug("Removing file %s" % temp_file)
             os.remove(temp_file)
 
     ovals = {}
     ovals = parseJSON(ovals, json_data, release)
-    logging.log(logging.INFO, "Finished parsing JSON data")
+    logging.info("Finished parsing JSON data")
     ovals = parsedirs(ovals, data_dir, re.compile('^d[ls]a.+\.data$'), 2, release)
     printdsas(ovals)
 

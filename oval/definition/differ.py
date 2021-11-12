@@ -38,7 +38,7 @@ class differ:
     def compareElement (self, architecture, packages):
         #We already inspected this arch
         if architecture in self.__equalArch:
-            logging.log(logging.DEBUG, "Architecture " + architecture + "already inspected")
+            logging.debug("Architecture " + architecture + "already inspected")
             return (0)
         
         #We don't have inspected base
@@ -72,6 +72,6 @@ class differ:
             self.__equal = equalC
             self.__differ = differC
         else:
-            logging.log(logging.DEBUG, "Architecture " + architecture + " too differens")
+            logging.debug("Architecture " + architecture + " too differens")
             self.__differ[architecture]  = packages
         return (1)
