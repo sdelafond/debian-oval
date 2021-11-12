@@ -37,13 +37,6 @@ DEBIAN_VERSION = {
     "sid" : "1000"}
 
 
-def usage (prog = "parse-wml-oval.py"):
-    """Print information about script flags and options"""
-
-    print("""usage: %s [vh] [-d <directory>]\t-d\twhich directory use for
-    dsa definition search\t-v\tverbose mode\t-h\tthis help""" % prog)
-
-
 def printdsas(ovals):
     """ Generate and print OVAL Definitions for collected DSA information """
     import pprint
@@ -272,6 +265,3 @@ if __name__ == "__main__":
                         default=100)
     ARGS = vars(PARSER.parse_args())
     main(ARGS)
-
-
-
