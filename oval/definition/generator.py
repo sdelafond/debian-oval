@@ -526,4 +526,4 @@ def createOVALDefinitions (ovals):
 
 def printOVALDefinitions (root):
   if len(root.find("definitions")):
-    print(etree.tostring(root, pretty_print=True, xml_declaration=True).decode('utf-8'))
+    print(etree.tostring(root, pretty_print=True, encoding='UTF-8', xml_declaration=True).decode('utf-8'))
