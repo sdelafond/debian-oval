@@ -151,6 +151,15 @@ def __createOVALUnameObject ():
   
   return (testsHash["obj"][name])
 
+def __getEvr(value):
+  """ Generate evr from version
+  
+  Prepend "0:" if no epoch already
+  """
+  if ":" not in value:
+    value = "0:"+value
+  return value
+
 def __createOVALState (value, operation = "less than"):
   """ Generate OVAL state definition 
   
@@ -164,7 +173,7 @@ def __createOVALState (value, operation = "less than"):
       attrs={"id":stateId, 
         "version":"1",
         "xmlns":"http://oval.mitre.org/XMLSchema/oval-definitions-5#linux"})
-    state.append ( __createXMLElement ("evr", "0:"+value,
+    state.append ( __createXMLElement ("evr", __getEvr(value),
                     {"datatype":"debian_evr_string", 
                      "operation":operation}))
     states.append (state)
